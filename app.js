@@ -2202,7 +2202,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // BACKUP & RESTORE HPP DATA LOGIC
     // ==========================================
     const btnBackupHpp = document.getElementById('btn-backup-hpp');
-    const btnRestoreHppTrigger = document.getElementById('btn-restore-hpp-trigger');
     const inputRestoreHppFile = document.getElementById('input-restore-hpp-file');
 
     if (btnBackupHpp) {
@@ -2213,13 +2212,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
+                const jsonStr = JSON.stringify(products, null, 2);
+                const blob = new Blob([jsonStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
                 const downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("href", url);
                 downloadAnchorNode.setAttribute("download", `tiktok_hpp_products_backup_${Date.now()}.json`);
                 document.body.appendChild(downloadAnchorNode);
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
+                URL.revokeObjectURL(url); // Clean up memory
                 showToast('Backup data HPP berhasil diunduh!', 'success');
             } catch (err) {
                 console.error(err);
@@ -2228,11 +2230,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    if (btnRestoreHppTrigger && inputRestoreHppFile) {
-        btnRestoreHppTrigger.addEventListener('click', () => {
-            inputRestoreHppFile.click();
-        });
-
+    if (inputRestoreHppFile) {
         inputRestoreHppFile.addEventListener('change', (e) => {
             const file = e.target.files[0];
             if (!file) return;
