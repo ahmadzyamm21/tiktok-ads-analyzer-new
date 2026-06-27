@@ -2542,178 +2542,238 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function getProductNetMargin(prod) {
+        if (!prod) return 0;
+        if (prod.netMargin !== undefined) return prod.netMargin;
+        
+        const price = prod.price || 0;
+        const hpp = prod.hpp || 0;
+        const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
+        const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
+        const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
+        const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
+        const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
+        const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
+        const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
+        
+        const feePct = marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee;
+        const totalFees = (price * (feePct / 100)) + serviceFee + logisticCost;
+        return price - hpp - totalFees;
+    }
+
     function renderDailyLogs() {
-        if (!dailyLogsTableBody) return;
+        try {
+            if (!dailyLogsTableBody) return;
 
-        if (dailyLogs.length === 0) {
-            dailyLogsTableBody.innerHTML = `
-                <tr>
-                    <td colspan="8" class="text-center text-gray">Belum ada catatan harian. Masukkan data di sebelah kiri untuk merekam catatan baru.</td>
-                </tr>
-            `;
-            return;
-        }
-
-        const sortedLogs = [...dailyLogs].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        dailyLogsTableBody.innerHTML = '';
-        sortedLogs.forEach(log => {
-            const tr = document.createElement('tr');
-            const formattedDate = new Date(log.date).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
-            
-            let productName = '<span class="text-muted">-</span>';
-            let netProfit = log.gmv - log.spend; // fallback
-            
-            if (log.productId) {
-                const prod = products.find(p => p.id === log.productId);
-                if (prod) {
-                    productName = prod.name;
-                    netProfit = (log.orders * prod.netMargin) - log.spend;
-                }
+            if (!Array.isArray(dailyLogs)) {
+                dailyLogs = [];
             }
 
-            const roas = log.spend > 0 ? (log.gmv / log.spend) : 0;
-            const profitColor = netProfit >= 0 ? 'var(--accent-green)' : 'var(--accent-pink)';
+            if (dailyLogs.length === 0) {
+                dailyLogsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center text-gray">Belum ada catatan harian. Masukkan data di sebelah kiri untuk merekam catatan baru.</td>
+                    </tr>
+                `;
+                return;
+            }
 
-            tr.innerHTML = `
-                <td><strong>${formattedDate}</strong></td>
-                <td>${productName}</td>
-                <td>${formatRupiah(log.spend)}</td>
-                <td>${formatRupiah(log.gmv)}</td>
-                <td>${log.orders} pcs</td>
-                <td><span class="badge ${roas >= 2.5 ? 'badge-cyan' : 'badge-pink'}">${roas.toFixed(2)}x</span></td>
-                <td style="color: ${profitColor}; font-weight: 600;">${formatRupiah(netProfit)}</td>
-                <td>
-                    <button class="btn btn-secondary btn-sm btn-delete-daily" data-id="${log.id}" style="padding: 4px 8px; font-size: 11px; cursor: pointer;">
-                        <i class="fas fa-trash"></i> Hapus
-                    </button>
-                </td>
-            `;
-            dailyLogsTableBody.appendChild(tr);
-        });
-
-        document.querySelectorAll('.btn-delete-daily').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const logId = btn.getAttribute('data-id');
-                if (confirm('Apakah Anda yakin ingin menghapus catatan harian ini?')) {
-                    dailyLogs = dailyLogs.filter(log => log.id !== logId);
-                    saveDailyLogsToStorage();
-                    renderDailyLogs();
-                    updateDailyChart();
-                }
+            const sortedLogs = [...dailyLogs].sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+                return dateB - dateA;
             });
-        });
+
+            dailyLogsTableBody.innerHTML = '';
+            sortedLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                const formattedDate = new Date(log.date).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+                
+                let productName = '<span class="text-muted">-</span>';
+                let netProfit = log.gmv - log.spend; // fallback
+                
+                if (log.productId && Array.isArray(products)) {
+                    const prod = products.find(p => p.id === log.productId);
+                    if (prod) {
+                        productName = prod.name;
+                        netProfit = (log.orders * getProductNetMargin(prod)) - log.spend;
+                    }
+                }
+
+                const roas = log.spend > 0 ? (log.gmv / log.spend) : 0;
+                const profitColor = netProfit >= 0 ? 'var(--accent-green)' : 'var(--accent-pink)';
+
+                tr.innerHTML = `
+                    <td><strong>${formattedDate}</strong></td>
+                    <td>${productName}</td>
+                    <td>${formatRupiah(log.spend)}</td>
+                    <td>${formatRupiah(log.gmv)}</td>
+                    <td>${log.orders} pcs</td>
+                    <td><span class="badge ${roas >= 2.5 ? 'badge-cyan' : 'badge-pink'}">${roas.toFixed(2)}x</span></td>
+                    <td style="color: ${profitColor}; font-weight: 600;">${formatRupiah(netProfit)}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-sm btn-delete-daily" data-id="${log.id}" style="padding: 4px 8px; font-size: 11px; cursor: pointer;">
+                            <i class="fas fa-trash"></i> Hapus
+                        </button>
+                    </td>
+                `;
+                dailyLogsTableBody.appendChild(tr);
+            });
+
+            document.querySelectorAll('.btn-delete-daily').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const logId = btn.getAttribute('data-id');
+                    if (confirm('Apakah Anda yakin ingin menghapus catatan harian ini?')) {
+                        dailyLogs = dailyLogs.filter(log => log.id !== logId);
+                        saveDailyLogsToStorage();
+                        renderDailyLogs();
+                        updateDailyChart();
+                    }
+                });
+            });
+        } catch (err) {
+            console.error('Error rendering daily logs:', err);
+        }
     }
 
     function updateDailyChart() {
-        const canvas = document.getElementById('chart-daily-trend');
-        if (!canvas) return;
+        try {
+            const canvas = document.getElementById('chart-daily-trend');
+            if (!canvas) return;
 
-        const ctx = canvas.getContext('2d');
-        if (charts.dailyTrend) {
-            charts.dailyTrend.destroy();
-            charts.dailyTrend = null;
-        }
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
 
-        if (dailyLogs.length === 0) return;
-
-        const sortedLogs = [...dailyLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
-        const labels = sortedLogs.map(log => {
-            const d = new Date(log.date);
-            return `${d.getDate()}/${d.getMonth() + 1}`;
-        });
-
-        const spendData = sortedLogs.map(log => log.spend);
-        const gmvData = sortedLogs.map(log => log.gmv);
-        const profitData = sortedLogs.map(log => {
-            let netProfit = log.gmv - log.spend;
-            if (log.productId) {
-                const prod = products.find(p => p.id === log.productId);
-                if (prod) {
-                    netProfit = (log.orders * prod.netMargin) - log.spend;
-                }
+            if (charts.dailyTrend) {
+                charts.dailyTrend.destroy();
+                charts.dailyTrend = null;
             }
-            return netProfit;
-        });
 
-        charts.dailyTrend = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    {
-                        label: 'Omset (GMV)',
-                        data: gmvData,
-                        borderColor: '#25F4EE',
-                        backgroundColor: 'rgba(37, 244, 238, 0.05)',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        tension: 0.2
-                    },
-                    {
-                        label: 'Laba Bersih Riil',
-                        data: profitData,
-                        borderColor: '#00FF87',
-                        backgroundColor: 'rgba(0, 255, 135, 0.05)',
-                        borderWidth: 2.5,
-                        pointRadius: 3,
-                        tension: 0.2
-                    },
-                    {
-                        label: 'Spend (Biaya)',
-                        data: spendData,
-                        borderColor: '#FE2C55',
-                        backgroundColor: 'rgba(254, 44, 85, 0.05)',
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        tension: 0.2
+            if (!Array.isArray(dailyLogs) || dailyLogs.length === 0) return;
+
+            const sortedLogs = [...dailyLogs].sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+                return dateA - dateB;
+            });
+            
+            const labels = sortedLogs.map(log => {
+                const d = new Date(log.date);
+                return isNaN(d.getTime()) ? '' : `${d.getDate()}/${d.getMonth() + 1}`;
+            });
+
+            const spendData = sortedLogs.map(log => log.spend);
+            const gmvData = sortedLogs.map(log => log.gmv);
+            const profitData = sortedLogs.map(log => {
+                let netProfit = log.gmv - log.spend;
+                if (log.productId && Array.isArray(products)) {
+                    const prod = products.find(p => p.id === log.productId);
+                    if (prod) {
+                        netProfit = (log.orders * getProductNetMargin(prod)) - log.spend;
                     }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { labels: { color: '#90A0B7', font: { family: 'Outfit', size: 11 } } }
+                }
+                return netProfit;
+            });
+
+            charts.dailyTrend = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Omset (GMV)',
+                            data: gmvData,
+                            borderColor: '#25F4EE',
+                            backgroundColor: 'rgba(37, 244, 238, 0.05)',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Laba Bersih Riil',
+                            data: profitData,
+                            borderColor: '#00FF87',
+                            backgroundColor: 'rgba(0, 255, 135, 0.05)',
+                            borderWidth: 2.5,
+                            pointRadius: 3,
+                            tension: 0.2
+                        },
+                        {
+                            label: 'Spend (Biaya)',
+                            data: spendData,
+                            borderColor: '#FE2C55',
+                            backgroundColor: 'rgba(254, 44, 85, 0.05)',
+                            borderWidth: 2,
+                            pointRadius: 3,
+                            tension: 0.2
+                        }
+                    ]
                 },
-                scales: {
-                    x: { ticks: { color: '#90A0B7', font: { family: 'Outfit' } }, grid: { color: 'rgba(255, 255, 255, 0.03)' } },
-                    y: { 
-                        ticks: { 
-                            color: '#90A0B7', 
-                            font: { family: 'Outfit' },
-                            callback: value => 'Rp ' + (value >= 1e6 ? (value/1e6).toFixed(1) + 'jt' : (value/1e3).toFixed(0) + 'rb')
-                        }, 
-                        grid: { color: 'rgba(255, 255, 255, 0.03)' } 
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#90A0B7', font: { family: 'Outfit', size: 11 } } }
+                    },
+                    scales: {
+                        x: { ticks: { color: '#90A0B7', font: { family: 'Outfit' } }, grid: { color: 'rgba(255, 255, 255, 0.03)' } },
+                        y: { 
+                            ticks: { 
+                                color: '#90A0B7', 
+                                font: { family: 'Outfit' },
+                                callback: value => 'Rp ' + (value >= 1e6 ? (value/1e6).toFixed(1) + 'jt' : (value/1e3).toFixed(0) + 'rb')
+                            }, 
+                            grid: { color: 'rgba(255, 255, 255, 0.03)' } 
+                        }
                     }
                 }
-            }
-        });
+            });
+        } catch (err) {
+            console.error('Error rendering daily chart:', err);
+        }
     }
 
     if (dailyLogForm) {
         dailyLogForm.addEventListener('submit', (e) => {
             e.preventDefault();
             
-            const newLog = {
-                id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-                date: document.getElementById('daily-date').value,
-                productId: document.getElementById('daily-product').value,
-                spend: parseFloat(document.getElementById('daily-spend').value) || 0,
-                gmv: parseFloat(document.getElementById('daily-gmv').value) || 0,
-                orders: parseFloat(document.getElementById('daily-orders').value) || 0
-            };
+            try {
+                const dateEl = document.getElementById('daily-date');
+                const productEl = document.getElementById('daily-product');
+                const spendEl = document.getElementById('daily-spend');
+                const gmvEl = document.getElementById('daily-gmv');
+                const ordersEl = document.getElementById('daily-orders');
 
-            dailyLogs.push(newLog);
-            saveDailyLogsToStorage();
-            
-            document.getElementById('daily-spend').value = '';
-            document.getElementById('daily-gmv').value = '';
-            document.getElementById('daily-orders').value = '';
+                if (!dateEl || !spendEl || !gmvEl || !ordersEl) {
+                    showToast('Gagal menemukan input form harian!', 'error');
+                    return;
+                }
 
-            renderDailyLogs();
-            updateDailyChart();
-            showToast('Catatan harian berhasil disimpan!', 'success');
+                const newLog = {
+                    id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    date: dateEl.value,
+                    productId: productEl ? productEl.value : '',
+                    spend: parseFloat(spendEl.value) || 0,
+                    gmv: parseFloat(gmvEl.value) || 0,
+                    orders: parseFloat(ordersEl.value) || 0
+                };
+
+                dailyLogs.push(newLog);
+                saveDailyLogsToStorage();
+                
+                spendEl.value = '';
+                gmvEl.value = '';
+                ordersEl.value = '';
+
+                renderDailyLogs();
+                updateDailyChart();
+                showToast('Catatan harian berhasil disimpan!', 'success');
+            } catch (err) {
+                console.error('Error saving daily log:', err);
+                showToast('Gagal menyimpan: ' + err.message, 'error');
+            }
         });
     }
 
