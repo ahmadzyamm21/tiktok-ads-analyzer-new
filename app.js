@@ -122,13 +122,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function saveSimulatorInputsToStorage() {
         const simData = {
-            hpp: simInputs.hpp.value,
-            spend: simInputs.spend.value,
-            cpc: simInputs.cpc.value,
-            cvr: simInputs.cvr.value,
-            aov: simInputs.aov.value,
-            targetRoas: simInputs.targetRoas.value,
-            productId: simSelectProduct.value
+            hpp: simInputs.hpp ? simInputs.hpp.value : '',
+            spend: simInputs.spend ? simInputs.spend.value : '',
+            cpc: simInputs.cpc ? simInputs.cpc.value : '',
+            cvr: simInputs.cvr ? simInputs.cvr.value : '',
+            aov: simInputs.aov ? simInputs.aov.value : '',
+            targetRoas: simInputs.targetRoas ? simInputs.targetRoas.value : '',
+            productId: (typeof simSelectProduct !== 'undefined' && simSelectProduct) ? simSelectProduct.value : ''
         };
         localStorage.setItem('tiktok_sim_data', JSON.stringify(simData));
     }
@@ -139,22 +139,24 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const simData = JSON.parse(saved);
                 
-                if (simData.productId) {
+                if (typeof simSelectProduct !== 'undefined' && simSelectProduct && simData.productId) {
                     simSelectProduct.value = simData.productId;
-                    simInputs.aov.readOnly = true;
-                    simInputs.hpp.readOnly = true;
-                    simInputs.aov.style.opacity = '0.7';
-                    simInputs.hpp.style.opacity = '0.7';
+                    if (simInputs.aov) simInputs.aov.readOnly = true;
+                    if (simInputs.hpp) simInputs.hpp.readOnly = true;
+                    if (simInputs.aov) simInputs.aov.style.opacity = '0.7';
+                    if (simInputs.hpp) simInputs.hpp.style.opacity = '0.7';
                 }
                 
-                if (simData.hpp) simInputs.hpp.value = simData.hpp;
-                if (simData.spend) simInputs.spend.value = simData.spend;
-                if (simData.cpc) simInputs.cpc.value = simData.cpc;
-                if (simData.cvr) simInputs.cvr.value = simData.cvr;
-                if (simData.aov) simInputs.aov.value = simData.aov;
-                if (simData.targetRoas) {
+                if (simInputs.hpp && simData.hpp) simInputs.hpp.value = simData.hpp;
+                if (simInputs.spend && simData.spend) simInputs.spend.value = simData.spend;
+                if (simInputs.cpc && simData.cpc) simInputs.cpc.value = simData.cpc;
+                if (simInputs.cvr && simData.cvr) simInputs.cvr.value = simData.cvr;
+                if (simInputs.aov && simData.aov) simInputs.aov.value = simData.aov;
+                if (simInputs.targetRoas && simData.targetRoas) {
                     simInputs.targetRoas.value = simData.targetRoas;
-                    rangeValTargetRoas.textContent = parseFloat(simData.targetRoas).toFixed(1) + 'x';
+                    if (rangeValTargetRoas) {
+                        rangeValTargetRoas.textContent = parseFloat(simData.targetRoas).toFixed(1) + 'x';
+                    }
                 }
             } catch (e) {
                 console.error('Error loading simulator data:', e);
@@ -166,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
     Object.values(simInputs).forEach(input => {
         if (input) {
             input.addEventListener('input', () => {
-                if (input.id === 'sim-input-target-roas') {
+                if (input.id === 'sim-input-target-roas' && rangeValTargetRoas) {
                     rangeValTargetRoas.textContent = parseFloat(input.value).toFixed(1) + 'x';
                 }
                 saveSimulatorInputsToStorage();
@@ -176,16 +178,16 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function updateSimulator() {
-        const aov = parseFloat(simInputs.aov.value) || 0;
-        const hpp = parseFloat(simInputs.hpp.value) || 0;
-        const plannedSpend = parseFloat(simInputs.spend.value) || 0;
-        const cpc = parseFloat(simInputs.cpc.value) || 500;
-        const cvr = parseFloat(simInputs.cvr.value) / 100 || 0.01;
-        const targetRoasSet = parseFloat(simInputs.targetRoas.value) || 2.5;
+        const aov = simInputs.aov ? (parseFloat(simInputs.aov.value) || 0) : 0;
+        const hpp = simInputs.hpp ? (parseFloat(simInputs.hpp.value) || 0) : 0;
+        const plannedSpend = simInputs.spend ? (parseFloat(simInputs.spend.value) || 0) : 0;
+        const cpc = simInputs.cpc ? (parseFloat(simInputs.cpc.value) || 500) : 500;
+        const cvr = simInputs.cvr ? (parseFloat(simInputs.cvr.value) / 100 || 0.01) : 0.01;
+        const targetRoasSet = simInputs.targetRoas ? (parseFloat(simInputs.targetRoas.value) || 2.5) : 2.5;
 
         // Calculate margin % dynamically
         let margin = 0.4; // fallback 40%
-        const selectedId = simSelectProduct.value;
+        const selectedId = (typeof simSelectProduct !== 'undefined' && simSelectProduct) ? simSelectProduct.value : '';
         if (selectedId) {
             const p = products.find(prod => prod.id === selectedId);
             if (p) {
