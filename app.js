@@ -120,6 +120,48 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const rangeValTargetRoas = document.getElementById('range-val-target-roas');
 
+    function saveSimulatorInputsToStorage() {
+        const simData = {
+            hpp: simInputs.hpp.value,
+            spend: simInputs.spend.value,
+            cpc: simInputs.cpc.value,
+            cvr: simInputs.cvr.value,
+            aov: simInputs.aov.value,
+            targetRoas: simInputs.targetRoas.value,
+            productId: simSelectProduct.value
+        };
+        localStorage.setItem('tiktok_sim_data', JSON.stringify(simData));
+    }
+
+    function loadSimulatorInputsFromStorage() {
+        const saved = localStorage.getItem('tiktok_sim_data');
+        if (saved) {
+            try {
+                const simData = JSON.parse(saved);
+                
+                if (simData.productId) {
+                    simSelectProduct.value = simData.productId;
+                    simInputs.aov.readOnly = true;
+                    simInputs.hpp.readOnly = true;
+                    simInputs.aov.style.opacity = '0.7';
+                    simInputs.hpp.style.opacity = '0.7';
+                }
+                
+                if (simData.hpp) simInputs.hpp.value = simData.hpp;
+                if (simData.spend) simInputs.spend.value = simData.spend;
+                if (simData.cpc) simInputs.cpc.value = simData.cpc;
+                if (simData.cvr) simInputs.cvr.value = simData.cvr;
+                if (simData.aov) simInputs.aov.value = simData.aov;
+                if (simData.targetRoas) {
+                    simInputs.targetRoas.value = simData.targetRoas;
+                    rangeValTargetRoas.textContent = parseFloat(simData.targetRoas).toFixed(1) + 'x';
+                }
+            } catch (e) {
+                console.error('Error loading simulator data:', e);
+            }
+        }
+    }
+
     // Attach simulator events
     Object.values(simInputs).forEach(input => {
         if (input) {
@@ -127,6 +169,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (input.id === 'sim-input-target-roas') {
                     rangeValTargetRoas.textContent = parseFloat(input.value).toFixed(1) + 'x';
                 }
+                saveSimulatorInputsToStorage();
                 updateSimulator();
             });
         }
@@ -1270,6 +1313,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         ];
 
+        saveCampaignsToStorage();
         updateAppState();
         showToast('Data demo berhasil dimuat!', 'success');
     });
@@ -2074,6 +2118,7 @@ document.addEventListener('DOMContentLoaded', () => {
             simInputs.aov.style.opacity = '1';
             simInputs.hpp.style.opacity = '1';
         }
+        saveSimulatorInputsToStorage();
         updateSimulator();
     });
 
@@ -2083,6 +2128,7 @@ document.addEventListener('DOMContentLoaded', () => {
     updateAppState(); // Render stored campaigns and metrics on load!
 
     // Initialize Simulator default view
+    loadSimulatorInputsFromStorage();
     updateSimulator();
 
     // ==========================================
