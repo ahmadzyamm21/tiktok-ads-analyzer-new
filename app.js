@@ -872,19 +872,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (c.productId) {
                 prod = products.find(p => p.id === c.productId);
                 if (prod) {
-                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
-                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
-                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
-                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
-                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
-                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
-                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
-                    
-                    const totalHpp = c.orders * prod.hpp;
-                    const totalAdminFee = c.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (c.orders * serviceFee);
-                    const totalLogistic = c.orders * logisticCost;
-                    
-                    netProfit = c.gmv - c.spend - totalHpp - totalAdminFee - totalLogistic;
+                    netProfit = (c.orders * prod.netMargin) - c.spend;
                     beRoasText = prod.beRoas === Infinity ? 'Infinite' : prod.beRoas.toFixed(2) + 'x';
                 }
             }
@@ -978,19 +966,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (c.productId) {
                 const prod = products.find(p => p.id === c.productId);
                 if (prod) {
-                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
-                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
-                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
-                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
-                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
-                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
-                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
-                    
-                    const totalHpp = c.orders * prod.hpp;
-                    const totalAdminFee = c.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (c.orders * serviceFee);
-                    const totalLogistic = c.orders * logisticCost;
-                    
-                    netProfit = c.gmv - c.spend - totalHpp - totalAdminFee - totalLogistic;
+                    netProfit = (c.orders * prod.netMargin) - c.spend;
                 }
             }
             totalNetProfit += netProfit;
@@ -1059,19 +1035,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (c.productId) {
                 const prod = products.find(p => p.id === c.productId);
                 if (prod) {
-                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
-                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
-                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
-                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
-                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
-                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
-                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
-                    
-                    const totalHpp = c.orders * prod.hpp;
-                    const totalAdminFee = c.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (c.orders * serviceFee);
-                    const totalLogistic = c.orders * logisticCost;
-                    
-                    netProfit = c.gmv - c.spend - totalHpp - totalAdminFee - totalLogistic;
+                    netProfit = (c.orders * prod.netMargin) - c.spend;
                 }
             }
             return netProfit;
@@ -1556,19 +1520,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (c.productId) {
                 const prod = products.find(p => p.id === c.productId);
                 if (prod) {
-                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
-                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
-                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
-                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
-                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
-                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
-                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
-                    
-                    const totalHpp = c.orders * prod.hpp;
-                    const totalAdminFee = c.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (c.orders * serviceFee);
-                    const totalLogistic = c.orders * logisticCost;
-                    
-                    netProfit = c.gmv - c.spend - totalHpp - totalAdminFee - totalLogistic;
+                    netProfit = (c.orders * prod.netMargin) - c.spend;
                 }
             }
             totalNetProfit += netProfit;
@@ -2612,20 +2564,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const prod = products.find(p => p.id === log.productId);
                 if (prod) {
                     productName = prod.name;
-                    
-                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
-                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
-                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
-                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
-                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
-                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
-                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
-
-                    const totalHpp = log.orders * prod.hpp;
-                    const totalAdminFee = log.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (log.orders * serviceFee);
-                    const totalLogistic = log.orders * logisticCost;
-
-                    netProfit = log.gmv - log.spend - totalHpp - totalAdminFee - totalLogistic;
+                    netProfit = (log.orders * prod.netMargin) - log.spend;
                 }
             }
 
@@ -2687,19 +2626,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (log.productId) {
                 const prod = products.find(p => p.id === log.productId);
                 if (prod) {
-                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
-                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
-                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
-                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
-                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
-                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
-                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
-
-                    const totalHpp = log.orders * prod.hpp;
-                    const totalAdminFee = log.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (log.orders * serviceFee);
-                    const totalLogistic = log.orders * logisticCost;
-
-                    netProfit = log.gmv - log.spend - totalHpp - totalAdminFee - totalLogistic;
+                    netProfit = (log.orders * prod.netMargin) - log.spend;
                 }
             }
             return netProfit;
