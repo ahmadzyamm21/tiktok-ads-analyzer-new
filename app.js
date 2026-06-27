@@ -2461,15 +2461,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateDailyProductDropdown() {
-        if (!dailyProductSelect) return;
+        const selectEl = document.getElementById('daily-product');
+        if (!selectEl) return;
         
-        dailyProductSelect.innerHTML = '<option value="">-- Tanpa HPP (Hanya Potong Iklan) --</option>';
+        selectEl.innerHTML = '<option value="">-- Tanpa HPP (Hanya Potong Iklan) --</option>';
         
         products.forEach(p => {
             const opt = document.createElement('option');
             opt.value = p.id;
             opt.textContent = p.name;
-            dailyProductSelect.appendChild(opt);
+            selectEl.appendChild(opt);
         });
     }
 
