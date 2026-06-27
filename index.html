@@ -81,10 +81,25 @@
                     <h1 id="page-title">Dashboard Overview</h1>
                     <p id="page-description">Analisis performa iklan TikTok Shop GMV Max & optimasi ROAS.</p>
                 </div>
-                <div class="header-actions">
-                    <button class="btn btn-secondary" id="btn-load-demo">
-                        <i class="fas fa-database"></i> Load Demo Data
-                    </button>
+                <div class="header-actions" style="display: flex; align-items: center; gap: 15px;">
+                    <!-- Notification Bell -->
+                    <div class="notification-bell-container" style="position: relative;">
+                        <button class="btn btn-icon" id="btn-notifications" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 50%; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; color: #FFF; position: relative; cursor: pointer; outline: none;">
+                            <i class="fas fa-bell"></i>
+                            <span class="notification-badge" id="notification-badge" style="display: none; position: absolute; top: -2px; right: -2px; background: var(--accent-pink); color: white; border-radius: 50%; font-size: 10px; width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid #0D0E12;">0</span>
+                        </button>
+                        
+                        <!-- Notification Dropdown Panel -->
+                        <div class="notification-panel card" id="notification-panel" style="display: none; position: absolute; top: 50px; right: 0; width: 320px; z-index: 1000; padding: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid var(--border-color); background: #13151c;">
+                            <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                                <h4 style="margin: 0; font-family: 'Outfit'; font-size: 14px; color: #FFF;">Notifikasi Diagnosis</h4>
+                                <span id="notification-close" style="font-size: 11px; color: var(--accent-pink); cursor: pointer; font-family: 'Outfit';">Tutup</span>
+                            </div>
+                            <div class="notification-list" id="notification-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-family: 'Outfit';">
+                                <div class="notification-item text-center text-gray" style="font-size: 12px; padding: 10px 0;">Tidak ada notifikasi penting saat ini.</div>
+                            </div>
+                        </div>
+                    </div>
                     <button class="btn btn-primary" id="btn-print-report">
                         <i class="fas fa-file-pdf"></i> Export Report
                     </button>
@@ -777,7 +792,7 @@
                                 </thead>
                                 <tbody id="campaigns-table-body">
                                     <tr>
-                                        <td colspan="11" class="text-center text-gray">Belum ada data kampanye. Silakan klik "Load Demo Data", isi formulir di atas, atau drag file CSV ke kotak unggah.</td>
+                                        <td colspan="11" class="text-center text-gray">Belum ada data kampanye. Silakan isi formulir di atas atau seret file CSV/Excel ke kotak unggah.</td>
                                     </tr>
                                 </tbody>
                             </table>

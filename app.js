@@ -834,6 +834,7 @@ document.addEventListener('DOMContentLoaded', () => {
         renderTable();
         calculateDashboardMetrics();
         generateRecommendations();
+        updateNotifications();
     }
 
     function deleteCampaign(id) {
@@ -1311,7 +1312,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Demo Data Loader
-    document.getElementById('btn-load-demo').addEventListener('click', () => {
+    const btnLoadDemo = document.getElementById('btn-load-demo');
+    if (btnLoadDemo) {
+        btnLoadDemo.addEventListener('click', () => {
         // Load demo products first
         products = [
             {
@@ -1481,6 +1484,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateAppState();
         showToast('Data demo & produk berhasil dimuat!', 'success');
     });
+}
 
     // Print Report as PDF
     // Print Report as PDF
@@ -2713,8 +2717,105 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ==========================================
+    // NOTIFICATION BELL & DIAGNOSTIC SYSTEM
+    // ==========================================
+    const btnNotifications = document.getElementById('btn-notifications');
+    const notificationPanel = document.getElementById('notification-panel');
+    const notificationClose = document.getElementById('notification-close');
+    const notificationBadge = document.getElementById('notification-badge');
+    const notificationList = document.getElementById('notification-list');
+
+    if (btnNotifications && notificationPanel) {
+        btnNotifications.addEventListener('click', (e) => {
+            e.stopPropagation();
+            notificationPanel.style.display = notificationPanel.style.display === 'none' ? 'block' : 'none';
+        });
+    }
+
+    if (notificationClose && notificationPanel) {
+        notificationClose.addEventListener('click', () => {
+            notificationPanel.style.display = 'none';
+        });
+    }
+
+    // Close panel when clicking outside
+    document.addEventListener('click', (e) => {
+        if (notificationPanel && notificationPanel.style.display === 'block') {
+            if (!notificationPanel.contains(e.target) && e.target !== btnNotifications && !btnNotifications.contains(e.target)) {
+                notificationPanel.style.display = 'none';
+            }
+        }
+    });
+
+    function updateNotifications() {
+        if (!notificationBadge || !notificationList) return;
+
+        const alerts = [];
+
+        campaigns.forEach(c => {
+            const roas = c.spend > 0 ? (c.gmv / c.spend) : 0;
+            const ctr = c.impressions > 0 ? (c.clicks / c.impressions * 100) : 0;
+
+            if (roas < 1.8 && c.spend > 0) {
+                alerts.push({
+                    type: 'danger',
+                    text: `Kampanye <strong>${c.name}</strong> boncos! ROAS aktual (${roas.toFixed(2)}x) di bawah target impas.`
+                });
+            } else if (c.spend > 0 && roas < c.targetRoas) {
+                alerts.push({
+                    type: 'warning',
+                    text: `ROAS <strong>${c.name}</strong> (${roas.toFixed(2)}x) belum mencapai Target ROAS (${c.targetRoas.toFixed(1)}x).`
+                });
+            }
+
+            if (c.spend > 0 && ctr < 1.0) {
+                alerts.push({
+                    type: 'warning',
+                    text: `CTR <strong>${c.name}</strong> rendah (${ctr.toFixed(2)}%). Video kreatif perlu diperbarui.`
+                });
+            }
+        });
+
+        if (alerts.length > 0) {
+            notificationBadge.textContent = alerts.length;
+            notificationBadge.style.display = 'flex';
+            
+            notificationList.innerHTML = '';
+            alerts.forEach(alert => {
+                const item = document.createElement('div');
+                item.style.padding = '8px 12px';
+                item.style.borderRadius = '8px';
+                item.style.fontSize = '12px';
+                item.style.lineHeight = '1.4';
+                item.style.borderLeft = '4px solid';
+                
+                if (alert.type === 'danger') {
+                    item.style.background = 'rgba(254, 44, 85, 0.08)';
+                    item.style.borderColor = 'var(--accent-pink)';
+                    item.style.color = '#FFA3B1';
+                } else {
+                    item.style.background = 'rgba(255, 170, 0, 0.08)';
+                    item.style.borderColor = '#FFAA00';
+                    item.style.color = '#FFEAA7';
+                }
+                
+                item.innerHTML = alert.text;
+                notificationList.appendChild(item);
+            });
+        } else {
+            notificationBadge.style.display = 'none';
+            notificationList.innerHTML = `
+                <div class="notification-item text-center text-gray" style="font-size: 12px; padding: 10px 0; color: #90A0B7;">
+                    Tidak ada notifikasi penting saat ini. Kampanye berjalan lancar!
+                </div>
+            `;
+        }
+    }
+
     // Load on start
     loadShopSettings();
     updateDailyProductDropdown();
     renderDailyLogs();
+    updateNotifications();
 });
