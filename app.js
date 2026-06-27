@@ -1348,10 +1348,58 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Demo Data Loader
     document.getElementById('btn-load-demo').addEventListener('click', () => {
+        // Load demo products first
+        products = [
+            {
+                id: 'prod_demo_1',
+                name: 'Tas Selempang Canvas',
+                price: 120000,
+                hpp: 50000,
+                marketplaceFee: 4.0,
+                dynamicCommission: 2.0,
+                affiliateFee: 0.0,
+                sapFee: 0.0,
+                growthXtraFee: 0.0,
+                serviceFee: 1250,
+                logisticCost: 3000,
+                otherCost: 0,
+                voucherType: 'none',
+                voucherVal: 0,
+                voucherRp: 0,
+                netMargin: 60650,
+                marginPct: 50.5,
+                beRoas: 1.98
+            },
+            {
+                id: 'prod_demo_2',
+                name: 'Daster Satin Premium',
+                price: 85000,
+                hpp: 35000,
+                marketplaceFee: 4.0,
+                dynamicCommission: 2.0,
+                affiliateFee: 0.0,
+                sapFee: 0.0,
+                growthXtraFee: 0.0,
+                serviceFee: 1250,
+                logisticCost: 3000,
+                otherCost: 0,
+                voucherType: 'none',
+                voucherVal: 0,
+                voucherRp: 0,
+                netMargin: 40650,
+                marginPct: 47.8,
+                beRoas: 2.09
+            }
+        ];
+        saveProductsToStorage();
+        renderProducts();
+        updateProductDropdowns();
+
         campaigns = [
             {
                 id: 'demo_1',
                 name: 'Tas Selempang Canvas (TikTok Shop)',
+                productId: 'prod_demo_1',
                 spend: 15000000,
                 impressions: 1250000,
                 clicks: 18750,
@@ -1362,6 +1410,7 @@ document.addEventListener('DOMContentLoaded', () => {
             {
                 id: 'demo_2',
                 name: 'Daster Satin Premium - Shop Video',
+                productId: 'prod_demo_2',
                 spend: 8500000,
                 impressions: 980000,
                 clicks: 17640,
@@ -1403,7 +1452,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         saveCampaignsToStorage();
         updateAppState();
-        showToast('Data demo berhasil dimuat!', 'success');
+        showToast('Data demo & produk berhasil dimuat!', 'success');
     });
 
     // Print Report as PDF
