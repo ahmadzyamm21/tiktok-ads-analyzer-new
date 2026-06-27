@@ -1189,55 +1189,37 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* Print Styling for PDF export */
 @media print {
+    /* Hide screen app */
+    .app-container, .modal, .toast {
+        display: none !important;
+    }
+    /* Show print layout */
+    #print-report-layout {
+        display: block !important;
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        font-family: 'Outfit', 'Inter', sans-serif !important;
+        padding: 10px !important;
+    }
     body {
         background-color: #FFFFFF !important;
         color: #000000 !important;
     }
-    .sidebar {
-        display: none !important;
+    /* Table styles for printing */
+    #print-report-layout table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin-bottom: 20px !important;
     }
-    .main-content {
-        padding: 0 !important;
-        background-color: #FFFFFF !important;
+    #print-report-layout th, 
+    #print-report-layout td {
+        border-bottom: 1px solid #ddd !important;
+        padding: 6px !important;
+        color: #111 !important;
     }
-    .header-actions, .analyzer-controls-row, .table-header .table-actions, .btn-delete-row, .rec-summary {
-        display: none !important;
-    }
-    .card, .metric-card, .sub-metrics-row {
-        background: #FFFFFF !important;
-        border: 1px solid #CCCCCC !important;
-        color: #000000 !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-    }
-    .metric-value, .sub-value, .kpi-value, .metric-title, .sub-label, h3, h2, h1 {
-        color: #000000 !important;
-        text-shadow: none !important;
-    }
-    .premium-table th {
-        background-color: #EEEEEE !important;
-        color: #000000 !important;
-        border-bottom: 2px solid #000000 !important;
-    }
-    .premium-table td {
-        border-bottom: 1px solid #CCCCCC !important;
-        color: #000000 !important;
-    }
-    .rec-card {
-        border: 1px solid #CCCCCC !important;
-        background: #FFFFFF !important;
-        color: #000000 !important;
-    }
-    .rec-card-title-group h4 {
-        color: #000000 !important;
-    }
-    .rec-card-body p {
-        color: #333333 !important;
-    }
-    .badge {
-        border: 1px solid #000000 !important;
-        color: #000000 !important;
-        background: transparent !important;
+    #print-report-layout th {
+        background-color: #f5f5f5 !important;
+        font-weight: bold !important;
     }
 }
 
@@ -1306,3 +1288,58 @@ input[type="range"]::-webkit-slider-thumb:hover {
 .modal.show .modal-content {
     transform: scale(1);
 }
+
+/* ==========================================
+   PREMIUM CYBERPUNK GLOWS & HOVER EFFECTS
+   ========================================== */
+.card {
+    transition: box-shadow var(--transition-normal), border-color var(--transition-normal);
+}
+
+.card:hover {
+    box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+    border-color: rgba(255, 255, 255, 0.09);
+}
+
+.metric-card {
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.metric-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px 0 rgba(0, 0, 0, 0.6);
+}
+
+.metric-card.highlight-card {
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+    border-color: var(--accent-cyan) !important;
+    box-shadow: 0 0 12px rgba(37, 244, 238, 0.25) !important;
+    background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+#products-table-body tr {
+    transition: background-color var(--transition-fast), border-left var(--transition-fast);
+}
+
+#products-table-body tr:hover {
+    background-color: rgba(255, 255, 255, 0.015) !important;
+}
+
+/* Responsiveness for breakdown container grid */
+@media (max-width: 768px) {
+    .breakdown-grid-wrapper {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+    .donut-chart-container {
+        height: 160px !important;
+        margin-top: 10px;
+    }
+}
+

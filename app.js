@@ -1267,12 +1267,156 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Print Report as PDF
+    // Print Report as PDF
     document.getElementById('btn-print-report').addEventListener('click', () => {
         if (campaigns.length === 0) {
             showToast('Harap muat data kampanye terlebih dahulu!', 'error');
             return;
         }
+
+        // Fill print data
+        document.getElementById('print-shop-name').textContent = document.getElementById('shop-name-display').textContent;
+        document.getElementById('print-report-date').textContent = 'Tanggal Cetak: ' + new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+        // Update logo
+        const logoPreviewImg = document.getElementById('settings-logo-preview-img');
+        const printLogoContainer = document.getElementById('print-shop-logo');
+        if (logoPreviewImg && logoPreviewImg.style.display !== 'none' && logoPreviewImg.src) {
+            printLogoContainer.innerHTML = `<img src="${logoPreviewImg.src}" style="width: 100%; height: 100%; object-fit: cover;">`;
+        } else {
+            printLogoContainer.innerHTML = `<i class="fas fa-store" style="font-size: 24px; color: #333;"></i>`;
+        }
+
+        // Executive Summary KPI values
+        let totalSpend = 0;
+        let totalGmv = 0;
+        let totalOrders = 0;
+        let weightedTargetRoasSum = 0;
+        let totalNetProfit = 0;
+
+        campaigns.forEach(c => {
+            totalSpend += c.spend;
+            totalGmv += c.gmv;
+            totalOrders += c.orders;
+            weightedTargetRoasSum += c.targetRoas * c.spend;
+            
+            let netProfit = c.gmv - c.spend;
+            if (c.productId) {
+                const prod = products.find(p => p.id === c.productId);
+                if (prod) {
+                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
+                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
+                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
+                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
+                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
+                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
+                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
+                    
+                    const totalHpp = c.orders * prod.hpp;
+                    const totalAdminFee = c.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (c.orders * serviceFee);
+                    const totalLogistic = c.orders * logisticCost;
+                    
+                    netProfit = c.gmv - c.spend - totalHpp - totalAdminFee - totalLogistic;
+                }
+            }
+            totalNetProfit += netProfit;
+        });
+
+        const avgRoas = totalSpend > 0 ? totalGmv / totalSpend : 0;
+
+        document.getElementById('print-total-spend').textContent = formatRupiah(totalSpend);
+        document.getElementById('print-total-gmv').textContent = formatRupiah(totalGmv);
+        document.getElementById('print-avg-roas').textContent = avgRoas.toFixed(2) + 'x';
         
+        const printNetEl = document.getElementById('print-net-profit');
+        printNetEl.textContent = formatRupiah(totalNetProfit);
+        printNetEl.style.color = totalNetProfit >= 0 ? '#008744' : '#d62d20';
+
+        // Section 1: HPP Products List
+        const printProductsTableBody = document.getElementById('print-products-table-body');
+        printProductsTableBody.innerHTML = '';
+        if (products.length === 0) {
+            printProductsTableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: #666; padding: 10px;">Belum ada profil HPP produk terdaftar.</td></tr>`;
+        } else {
+            products.forEach(p => {
+                const marketplaceFee = p.marketplaceFee !== undefined ? p.marketplaceFee : 4.0;
+                const dynamicCommission = p.dynamicCommission !== undefined ? p.dynamicCommission : 2.0;
+                const affiliateFee = p.affiliateFee !== undefined ? p.affiliateFee : 0.0;
+                const sapFee = p.sapFee !== undefined ? p.sapFee : 0.0;
+                const growthXtraFee = p.growthXtraFee !== undefined ? p.growthXtraFee : 0.0;
+                const serviceFee = p.serviceFee !== undefined ? p.serviceFee : 1250;
+                const logisticCost = p.logisticCost !== undefined ? p.logisticCost : 3000;
+                
+                const discountedPrice = p.price - (p.voucherRp || 0);
+                const totalAdmin = discountedPrice * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + serviceFee;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="padding: 6px; border-bottom: 1px solid #ddd;">${p.name}</td>
+                    <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatRupiah(p.price)}</td>
+                    <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatRupiah(p.hpp)}</td>
+                    <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatRupiah(p.voucherRp || 0)}</td>
+                    <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatRupiah(totalAdmin)}</td>
+                    <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatRupiah(logisticCost)}</td>
+                    <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold; color: ${p.netMargin >= 0 ? '#008744' : '#d62d20'}">${formatRupiah(p.netMargin)} (${p.marginPct.toFixed(1)}%)</td>
+                    <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">${p.beRoas === Infinity ? 'Infinite' : p.beRoas.toFixed(2) + 'x'}</td>
+                `;
+                printProductsTableBody.appendChild(tr);
+            });
+        }
+
+        // Section 2: Campaigns List
+        const printCampaignsTableBody = document.getElementById('print-campaigns-table-body');
+        printCampaignsTableBody.innerHTML = '';
+        campaigns.forEach(c => {
+            const roas = c.spend > 0 ? c.gmv / c.spend : 0;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td style="padding: 6px; border-bottom: 1px solid #ddd;">${c.name}</td>
+                <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatRupiah(c.spend)}</td>
+                <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatNumber(c.impressions)}</td>
+                <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatNumber(c.clicks)}</td>
+                <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatNumber(c.orders)}</td>
+                <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatRupiah(c.gmv)}</td>
+                <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">${roas.toFixed(2)}x (Tar: ${c.targetRoas.toFixed(1)}x)</td>
+                <td style="padding: 6px; border-bottom: 1px solid #ddd; font-weight: bold;">${determineStatus(c)}</td>
+            `;
+            printCampaignsTableBody.appendChild(tr);
+        });
+
+        // Section 3: Diagnostic Recommendations
+        const printRecsContainer = document.getElementById('print-recommendations-container');
+        printRecsContainer.innerHTML = '';
+        
+        const diagnosticList = document.getElementById('recommendations-list');
+        const recCards = diagnosticList ? diagnosticList.querySelectorAll('.rec-card') : [];
+        
+        if (recCards.length === 0 || (recCards.length === 1 && recCards[0].textContent.includes('Belum ada rekomendasi'))) {
+            printRecsContainer.innerHTML = `<div style="color: #666; font-style: italic; font-size: 11px;">Tidak ada rekomendasi aktif. Semua kampanye berada dalam rentang sehat.</div>`;
+        } else {
+            recCards.forEach(card => {
+                const title = card.querySelector('.rec-card-title-group h4') ? card.querySelector('.rec-card-title-group h4').textContent : '';
+                const desc = card.querySelector('.rec-card-body p') ? card.querySelector('.rec-card-body p').textContent : '';
+                const tag = card.querySelector('.rec-tag') ? card.querySelector('.rec-tag').textContent : '';
+                const badge = card.querySelector('.badge') ? card.querySelector('.badge').textContent : '';
+
+                const item = document.createElement('div');
+                item.style.border = '1px solid #eee';
+                item.style.padding = '8px';
+                item.style.borderRadius = '5px';
+                item.style.fontSize = '11px';
+                
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: bold;">
+                        <span style="color: #111;">[${tag}] ${title}</span>
+                        <span style="color: #666; font-size: 9px; border: 1px solid #999; padding: 1px 3px; border-radius: 3px;">${badge}</span>
+                    </div>
+                    <div style="color: #444; font-size: 10.5px;">${desc}</div>
+                `;
+                printRecsContainer.appendChild(item);
+            });
+        }
+
         showToast('Membuka dialog pencetakan laporan PDF...', 'info');
         setTimeout(() => {
             window.print();
@@ -1518,6 +1662,10 @@ document.addEventListener('DOMContentLoaded', () => {
             prodSummaryBeRoas.textContent = '0.00x';
             prodSummaryMarginPct.textContent = '0%';
             bdCard.style.display = 'none';
+            if (charts.productCost) {
+                charts.productCost.destroy();
+                charts.productCost = null;
+            }
             if (summaryTitle) {
                 summaryTitle.innerHTML = `<i class="fas fa-info-circle"></i> Menampilkan Detail Profil: (Belum ada produk)`;
             }
@@ -1549,6 +1697,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const affRp = discountedPrice * (affiliateFee / 100);
         const sapRp = discountedPrice * (sapFee / 100);
         const growthXtraRp = discountedPrice * (growthXtraFee / 100);
+        const totalFees = marketRp + dynamicRp + affRp + sapRp + growthXtraRp + serviceFee;
 
         document.getElementById('bd-price').textContent = formatRupiah(p.price);
         document.getElementById('bd-voucher').textContent = (voucherRp > 0 ? `- ` : '') + formatRupiah(voucherRp) + (p.voucherType === 'percent' ? ` (${p.voucherVal}%)` : '');
@@ -1569,6 +1718,59 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             marginEl.style.color = 'var(--accent-pink)';
         }
+
+        // Draw visual cost breakdown chart
+        drawProductCostChart(p.hpp, totalFees, logisticCost, voucherRp, p.netMargin);
+    }
+
+    function drawProductCostChart(hpp, fees, logistic, voucher, margin) {
+        const canvas = document.getElementById('chart-product-cost-donut');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (charts.productCost) {
+            charts.productCost.destroy();
+        }
+
+        const displayMargin = Math.max(0, margin);
+
+        charts.productCost = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['HPP', 'Biaya Admin TikTok', 'Biaya Ongkir', 'Voucher Toko', 'Margin Bersih'],
+                datasets: [{
+                    data: [hpp, fees, logistic, voucher, displayMargin],
+                    backgroundColor: [
+                        '#FE2C55', // HPP - Pink
+                        '#B259FF', // Fees - Purple
+                        '#FFD214', // Logistic - Yellow
+                        'rgba(254, 44, 85, 0.4)', // Voucher - Light Pink
+                        '#00FF87'  // Margin - Green
+                    ],
+                    borderColor: '#11141E',
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const val = context.raw;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const pct = total > 0 ? (val / total * 100).toFixed(1) : 0;
+                                return ` ${context.label}: ${formatRupiah(val)} (${pct}%)`;
+                            }
+                        }
+                    }
+                },
+            }
+        });
     }
 
     function renderProducts() {
@@ -1690,6 +1892,135 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show summary of last product by default
         showProductBreakdown(products[products.length - 1]);
+    }
+
+    // ==========================================
+    // MASS PRICING SIMULATOR LOGIC
+    // ==========================================
+    const massPricePctInput = document.getElementById('mass-adj-price-pct');
+    const massHppPctInput = document.getElementById('mass-adj-hpp-pct');
+    const btnMassPreview = document.getElementById('btn-mass-preview');
+    const btnMassApply = document.getElementById('btn-mass-apply');
+    const massPreviewContainer = document.getElementById('mass-preview-table-container');
+    const massPreviewTableBody = document.getElementById('mass-preview-table-body');
+
+    let simulatedProducts = [];
+
+    if (btnMassPreview) {
+        btnMassPreview.addEventListener('click', () => {
+            if (products.length === 0) {
+                showToast('Belum ada produk untuk disimulasikan. Silakan tambahkan produk terlebih dahulu.', 'error');
+                return;
+            }
+
+            const pricePct = parseFloat(massPricePctInput.value) || 0;
+            const hppPct = parseFloat(massHppPctInput.value) || 0;
+
+            if (pricePct === 0 && hppPct === 0) {
+                showToast('Masukkan persentase perubahan harga atau HPP terlebih dahulu.', 'info');
+                return;
+            }
+
+            simulatedProducts = products.map(p => {
+                const newPrice = Math.round(p.price * (1 + pricePct / 100));
+                const newHpp = Math.round(p.hpp * (1 + hppPct / 100));
+                
+                const marketplaceFee = p.marketplaceFee !== undefined ? p.marketplaceFee : 4.0;
+                const dynamicCommission = p.dynamicCommission !== undefined ? p.dynamicCommission : 2.0;
+                const affiliateFee = p.affiliateFee !== undefined ? p.affiliateFee : 0.0;
+                const sapFee = p.sapFee !== undefined ? p.sapFee : 0.0;
+                const growthXtraFee = p.growthXtraFee !== undefined ? p.growthXtraFee : 0.0;
+                const serviceFee = p.serviceFee !== undefined ? p.serviceFee : 1250;
+                const logisticCost = p.logisticCost !== undefined ? p.logisticCost : 3000;
+                
+                const voucherRp = p.voucherRp || 0;
+                const discountedPrice = newPrice - voucherRp;
+
+                const marketRp = discountedPrice * (marketplaceFee / 100);
+                const dynamicRp = discountedPrice * (dynamicCommission / 100);
+                const affRp = discountedPrice * (affiliateFee / 100);
+                const sapRp = discountedPrice * (sapFee / 100);
+                const growthXtraRp = discountedPrice * (growthXtraFee / 100);
+
+                const newNetMargin = discountedPrice - newHpp - marketRp - dynamicRp - affRp - sapRp - growthXtraRp - serviceFee - logisticCost;
+                const newMarginPct = newPrice > 0 ? (newNetMargin / newPrice) * 100 : 0;
+                const newBeRoas = newNetMargin > 0 ? (newPrice / newNetMargin) : Infinity;
+
+                return {
+                    ...p,
+                    price: newPrice,
+                    hpp: newHpp,
+                    netMargin: newNetMargin,
+                    marginPct: newMarginPct,
+                    beRoas: newBeRoas
+                };
+            });
+
+            // Render Preview Table
+            massPreviewTableBody.innerHTML = '';
+            simulatedProducts.forEach(sp => {
+                const oldProd = products.find(p => p.id === sp.id);
+                const priceDiff = sp.price - oldProd.price;
+                const hppDiff = sp.hpp - oldProd.hpp;
+                const marginDiff = sp.netMargin - oldProd.netMargin;
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td style="font-weight: 600;">${sp.name}</td>
+                    <td>
+                        ${formatRupiah(sp.price)}
+                        <span style="font-size: 11px; font-weight: normal; margin-left: 5px; color: ${priceDiff >= 0 ? 'var(--accent-green)' : 'var(--accent-pink)'}">
+                            (${priceDiff >= 0 ? '+' : ''}${formatRupiah(priceDiff)})
+                        </span>
+                    </td>
+                    <td>
+                        ${formatRupiah(sp.hpp)}
+                        <span style="font-size: 11px; font-weight: normal; margin-left: 5px; color: ${hppDiff >= 0 ? 'var(--accent-pink)' : 'var(--accent-green)'}">
+                            (${hppDiff >= 0 ? '+' : ''}${formatRupiah(hppDiff)})
+                        </span>
+                    </td>
+                    <td style="font-weight: 500; color: ${sp.netMargin > 0 ? 'var(--accent-cyan)' : 'var(--accent-pink)'}">
+                        ${formatRupiah(sp.netMargin)}
+                        <span style="font-size: 11px; font-weight: normal; margin-left: 5px; color: ${marginDiff >= 0 ? 'var(--accent-green)' : 'var(--accent-pink)'}">
+                            (${marginDiff >= 0 ? '+' : ''}${formatRupiah(marginDiff)})
+                        </span>
+                    </td>
+                    <td style="font-weight: bold; color: ${sp.marginPct > 0 ? 'var(--accent-cyan)' : 'var(--accent-pink)'}">
+                        ${sp.marginPct.toFixed(1)}%
+                    </td>
+                    <td style="font-weight: bold; color: var(--accent-pink)">
+                        ${sp.beRoas === Infinity ? 'Infinite' : sp.beRoas.toFixed(2) + 'x'}
+                    </td>
+                `;
+                massPreviewTableBody.appendChild(tr);
+            });
+
+            massPreviewContainer.style.display = 'block';
+            btnMassApply.style.display = 'inline-block';
+            showToast('Simulasi penyesuaian harga massal berhasil dimuat!', 'success');
+        });
+    }
+
+    if (btnMassApply) {
+        btnMassApply.addEventListener('click', () => {
+            if (simulatedProducts.length === 0) return;
+
+            if (confirm('Apakah Anda yakin ingin menerapkan perubahan harga & HPP baru ini ke toko Anda? Tindakan ini akan memperbarui data semua produk Anda.')) {
+                products = [...simulatedProducts];
+                saveProductsToStorage();
+                renderProducts();
+                updateProductDropdowns();
+                updateAppState();
+
+                // Reset simulator inputs
+                massPricePctInput.value = '0';
+                massHppPctInput.value = '0';
+                massPreviewContainer.style.display = 'none';
+                btnMassApply.style.display = 'none';
+                
+                showToast('Perubahan harga massal berhasil diterapkan!', 'success');
+            }
+        });
     }
 
     function updateProductDropdowns() {

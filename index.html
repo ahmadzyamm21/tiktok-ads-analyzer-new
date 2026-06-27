@@ -349,59 +349,68 @@
                             <h4 style="margin-top: 0; color: var(--accent-cyan); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
                                 <i class="fas fa-calculator"></i> Simulasi Rincian Alokasi Biaya per Unit
                             </h4>
-                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; font-size: 13.5px;">
+                            <div style="display: grid; grid-template-columns: 3fr 2fr; gap: 24px; align-items: center;" class="breakdown-grid-wrapper">
+                                <!-- Left Column: details -->
                                 <div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                        <span class="text-gray">Harga Jual Asli:</span>
-                                        <span id="bd-price" style="font-weight: 600;">Rp 0</span>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; font-size: 13px;">
+                                        <div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                                <span class="text-gray">Harga Jual Asli:</span>
+                                                <span id="bd-price" style="font-weight: 600;">Rp 0</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                                <span class="text-gray">Voucher Toko:</span>
+                                                <span id="bd-voucher" style="color: var(--accent-pink);">- Rp 0</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; font-weight: bold;">
+                                                <span>Harga Bersih (Diterima):</span>
+                                                <span id="bd-net-price">Rp 0</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; margin-top: 10px;">
+                                                <span class="text-gray">HPP (Harga Modal Beli):</span>
+                                                <span id="bd-hpp" style="color: var(--accent-pink); font-weight: 500;">- Rp 0</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                                <span class="text-gray">Biaya Marketplace:</span>
+                                                <span id="bd-marketplace" style="color: var(--accent-pink);">- Rp 0</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                                <span class="text-gray">Komisi Dinamis:</span>
+                                                <span id="bd-dynamic" style="color: var(--accent-pink);">- Rp 0</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                                <span class="text-gray">Komisi Afiliasi:</span>
+                                                <span id="bd-affiliate" style="color: var(--accent-pink);">- Rp 0</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                                <span class="text-gray">Biaya SAP:</span>
+                                                <span id="bd-sap" style="color: var(--accent-pink);">- Rp 0</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                                <span class="text-gray">Growth Xtra:</span>
+                                                <span id="bd-growth-xtra" style="color: var(--accent-pink);">- Rp 0</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                                <span class="text-gray">Biaya Layanan Tetap:</span>
+                                                <span id="bd-service" style="color: var(--accent-pink);">- Rp 0</span>
+                                            </div>
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                                <span class="text-gray">Fee Logistic / Ongkir:</span>
+                                                <span id="bd-logistic" style="color: var(--accent-pink); font-weight: 500;">- Rp 0</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                        <span class="text-gray">Voucher Toko:</span>
-                                        <span id="bd-voucher" style="color: var(--accent-pink);">- Rp 0</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; font-weight: bold;">
-                                        <span>Harga Bersih (Diterima):</span>
-                                        <span id="bd-net-price">Rp 0</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; margin-top: 10px;">
-                                        <span class="text-gray">HPP (Harga Modal Beli):</span>
-                                        <span id="bd-hpp" style="color: var(--accent-pink); font-weight: 500;">- Rp 0</span>
+                                    <div style="border-top: 1px dashed var(--border-color); margin-top: 15px; padding-top: 10px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: var(--accent-green);">
+                                        <span>MARGIN BERSIH RIIL (Laba per Unit):</span>
+                                        <span id="bd-margin">Rp 0 (0%)</span>
                                     </div>
                                 </div>
-                                <div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                        <span class="text-gray">Biaya Marketplace:</span>
-                                        <span id="bd-marketplace" style="color: var(--accent-pink);">- Rp 0</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                        <span class="text-gray">Komisi Dinamis:</span>
-                                        <span id="bd-dynamic" style="color: var(--accent-pink);">- Rp 0</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                        <span class="text-gray">Komisi Afiliasi:</span>
-                                        <span id="bd-affiliate" style="color: var(--accent-pink);">- Rp 0</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                        <span class="text-gray">Biaya SAP:</span>
-                                        <span id="bd-sap" style="color: var(--accent-pink);">- Rp 0</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                        <span class="text-gray">Growth Xtra:</span>
-                                        <span id="bd-growth-xtra" style="color: var(--accent-pink);">- Rp 0</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                        <span class="text-gray">Biaya Layanan Tetap:</span>
-                                        <span id="bd-service" style="color: var(--accent-pink);">- Rp 0</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                        <span class="text-gray">Fee Logistic / Ongkir:</span>
-                                        <span id="bd-logistic" style="color: var(--accent-pink); font-weight: 500;">- Rp 0</span>
-                                    </div>
+                                <!-- Right Column: Doughnut Chart -->
+                                <div style="position: relative; height: 200px; display: flex; align-items: center; justify-content: center;" class="donut-chart-container">
+                                    <canvas id="chart-product-cost-donut"></canvas>
                                 </div>
-                            </div>
-                            <div style="border-top: 1px dashed var(--border-color); margin-top: 15px; padding-top: 10px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: var(--accent-green);">
-                                <span>MARGIN BERSIH RIIL (Laba per Unit):</span>
-                                <span id="bd-margin">Rp 0 (0%)</span>
                             </div>
                         </div>
 
@@ -429,6 +438,53 @@
                                         <tr>
                                             <td colspan="9" class="text-center text-gray">Belum ada produk. Masukkan detail produk di sebelah kiri untuk membuat profil HPP.</td>
                                         </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Mass Pricing Simulator Card -->
+                        <div class="card mt-3" id="mass-pricing-card" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); margin-bottom: 20px;">
+                            <div class="card-header" style="border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
+                                <h3 style="margin: 0; color: var(--accent-cyan); font-size: 16px;"><i class="fas fa-percent"></i> Simulasi Penyesuaian Harga & HPP Massal</h3>
+                                <p style="font-size: 12px; color: var(--text-muted); margin: 4px 0 0 0;">Simulasikan dampak kenaikan/penurunan harga jual atau modal supplier terhadap profitabilitas toko Anda.</p>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px;" class="mass-controls-row">
+                                <div class="form-group">
+                                    <label style="display: block; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; font-weight: 600; color: var(--text-muted);">Ubah Harga Jual (%)</label>
+                                    <input type="number" id="mass-adj-price-pct" placeholder="Contoh: 10 atau -5" value="0" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFFFFF; padding: 10px; font-family: inherit; font-size: 13.5px; outline: none; width: 100%;">
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: block; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; font-weight: 600; color: var(--text-muted);">Ubah HPP / Modal (%)</label>
+                                    <input type="number" id="mass-adj-hpp-pct" placeholder="Contoh: 5 atau -10" value="0" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFFFFF; padding: 10px; font-family: inherit; font-size: 13.5px; outline: none; width: 100%;">
+                                </div>
+                                <div style="display: flex; align-items: flex-end; gap: 10px;">
+                                    <button type="button" class="btn btn-secondary" id="btn-mass-preview" style="flex: 1; padding: 10px; font-size: 13px; border-radius: 8px;">
+                                        <i class="fas fa-eye"></i> Preview Simulasi
+                                    </button>
+                                    <button type="button" class="btn btn-cyan" id="btn-mass-apply" style="flex: 1; padding: 10px; font-size: 13px; display: none; border-radius: 8px;">
+                                        <i class="fas fa-check-circle"></i> Terapkan ke Toko
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Preview Table -->
+                            <div class="table-responsive" id="mass-preview-table-container" style="display: none; border: 1px solid var(--border-color); border-radius: 8px; background: rgba(0,0,0,0.1); padding: 15px;">
+                                <h4 style="margin-top: 0; margin-bottom: 12px; font-size: 13px; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 0.5px;">Tabel Preview Penyesuaian Massal</h4>
+                                <table class="premium-table" style="font-size: 12.5px; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Produk</th>
+                                            <th>Harga Jual Baru</th>
+                                            <th>HPP Baru</th>
+                                            <th>Margin Baru (Rp)</th>
+                                            <th>Margin Baru (%)</th>
+                                            <th>BE ROAS Baru</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="mass-preview-table-body">
+                                        <!-- Populated dynamically -->
                                     </tbody>
                                 </table>
                             </div>
@@ -708,6 +764,104 @@
             </section>
 
         </main>
+    </div>
+
+    <!-- Hidden Layout for PDF Printing -->
+    <div id="print-report-layout" style="display: none;">
+        <!-- Header -->
+        <div class="print-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div id="print-shop-logo" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-store" style="font-size: 24px; color: #333;"></i>
+                </div>
+                <div>
+                    <h1 id="print-shop-name" style="margin: 0; font-size: 20px; color: #111;">My TikTok Shop</h1>
+                    <p style="margin: 2px 0 0 0; font-size: 11px; color: #666;">Laporan Analisis Performa & Keuntungan Iklan GMV Max</p>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <h3 style="margin: 0; font-size: 13px; color: #333;">Laporan Eksekutif Toko</h3>
+                <p id="print-report-date" style="margin: 2px 0 0 0; font-size: 10px; color: #777;">Tanggal Cetak: -</p>
+            </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 10px; color: #666; text-transform: uppercase;">Total Spend (Iklan)</div>
+                <div id="print-total-spend" style="font-size: 16px; font-weight: bold; margin-top: 5px;">Rp 0</div>
+            </div>
+            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 10px; color: #666; text-transform: uppercase;">Total GMV (Kotor)</div>
+                <div id="print-total-gmv" style="font-size: 16px; font-weight: bold; margin-top: 5px;">Rp 0</div>
+            </div>
+            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 10px; color: #666; text-transform: uppercase;">Average ROAS</div>
+                <div id="print-avg-roas" style="font-size: 16px; font-weight: bold; margin-top: 5px;">0.00x</div>
+            </div>
+            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 6px; background-color: #f9f9f9;">
+                <div style="font-size: 10px; color: #666; text-transform: uppercase; font-weight: bold;">Laba Bersih Riil</div>
+                <div id="print-net-profit" style="font-size: 16px; font-weight: bold; margin-top: 5px; color: #008744;">Rp 0</div>
+            </div>
+        </div>
+
+        <!-- Section 1: HPP Products List -->
+        <div style="margin-bottom: 25px;">
+            <h3 style="font-size: 13px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; color: #111;">
+                <i class="fas fa-box"></i> Rincian Profit & HPP Produk
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f5f5f5; border-bottom: 2px solid #bbb;">
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid #ccc;">Nama Produk</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Harga Jual</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">HPP</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Voucher</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Biaya Admin</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Fee Logistic</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Laba/Unit</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">BE ROAS</th>
+                    </tr>
+                </thead>
+                <tbody id="print-products-table-body">
+                    <!-- Dynamic -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Section 2: Campaigns List -->
+        <div style="margin-bottom: 25px;">
+            <h3 style="font-size: 13px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; color: #111;">
+                <i class="fas fa-table"></i> Performa Kampanye Iklan Active
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f5f5f5; border-bottom: 2px solid #bbb;">
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid #ccc;">Nama Kampanye</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Spend</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Impressions</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Clicks</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Orders</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">GMV</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Actual ROAS</th>
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid #ccc;">Status</th>
+                    </tr>
+                </thead>
+                <tbody id="print-campaigns-table-body">
+                    <!-- Dynamic -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Section 3: Diagnostic Recommendations -->
+        <div style="page-break-inside: avoid;">
+            <h3 style="font-size: 13px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; color: #111;">
+                <i class="fas fa-lightbulb"></i> Diagnosis Taktis & Rekomendasi Toko
+            </h3>
+            <div id="print-recommendations-container" style="display: flex; flex-direction: column; gap: 8px;">
+                <!-- Dynamic -->
+            </div>
+        </div>
     </div>
 
     <!-- Modal Pengaturan Toko -->
