@@ -406,6 +406,17 @@
                                         <span>MARGIN BERSIH RIIL (Laba per Unit):</span>
                                         <span id="bd-margin">Rp 0 (0%)</span>
                                     </div>
+                                    <div style="border-top: 1px solid var(--border-color); margin-top: 10px; padding-top: 10px; display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 10px; font-size: 12px;">
+                                        <div>
+                                            <span class="text-gray" style="font-weight: 500;">CPC Maksimal agar Iklan Tidak Rugi (BE CPC):</span>
+                                            <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">Batas biaya per klik maksimal agar iklan Anda tetap profit.</div>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 6px;">
+                                            <span style="font-size: 10.5px; color: var(--text-secondary);">Asumsi CVR:</span>
+                                            <input type="number" id="bd-cvr-estimate" value="2.0" step="0.1" min="0.1" style="width: 48px; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 6px; color: #FFF; padding: 4px 6px; font-size: 11px; outline: none; text-align: center;">
+                                            <span style="font-weight: 700; color: var(--accent-pink); font-size: 13px; margin-left: 4px;" id="bd-be-cpc">Rp 0</span>
+                                        </div>
+                                    </div>
                                 </div>
                                 <!-- Right Column: Doughnut Chart -->
                                 <div style="position: relative; height: 200px; display: flex; align-items: center; justify-content: center;" class="donut-chart-container">
@@ -416,8 +427,17 @@
 
                         <!-- Product List Card -->
                         <div class="table-card card">
-                            <div class="table-header">
+                            <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                                 <h3>Daftar Produk & Profil HPP</h3>
+                                <div style="display: flex; gap: 8px;">
+                                    <button type="button" class="btn btn-secondary" id="btn-backup-hpp" style="padding: 6px 12px; font-size: 11.5px; border-radius: 6px;">
+                                        <i class="fas fa-download"></i> Backup HPP
+                                    </button>
+                                    <button type="button" class="btn btn-secondary" id="btn-restore-hpp-trigger" style="padding: 6px 12px; font-size: 11.5px; border-radius: 6px;">
+                                        <i class="fas fa-upload"></i> Restore HPP
+                                    </button>
+                                    <input type="file" id="input-restore-hpp-file" accept=".json" style="display: none;">
+                                </div>
                             </div>
                             <div class="table-responsive">
                                 <table class="premium-table" id="products-table">
@@ -553,6 +573,14 @@
                                     <span class="addon">%</span>
                                 </div>
                                 <span class="input-help">Dari 100 orang yang klik, berapa orang yang belanja? (umumnya 1% - 3%).</span>
+                            </div>
+
+                            <div class="form-group" style="margin-top: 15px; margin-bottom: 15px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" id="sim-input-mega-sale" style="width: 16px; height: 16px; accent-color: var(--accent-pink);">
+                                    <span style="font-weight: 600; color: var(--accent-pink); font-size: 13.0px;"><i class="fas fa-bolt"></i> Aktifkan Mode Event Mega-Sale / Gajian</span>
+                                </label>
+                                <span class="input-help" style="margin-left: 24px; margin-top: 4px; display: block;">Simulasikan lonjakan CVR (1.8x) dan persaingan bid CPC (1.3x) saat event diskon besar.</span>
                             </div>
 
                             <div class="form-group range-group">

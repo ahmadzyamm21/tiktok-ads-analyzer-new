@@ -116,7 +116,8 @@ document.addEventListener('DOMContentLoaded', () => {
         cpc: document.getElementById('sim-input-cpc'),
         cvr: document.getElementById('sim-input-cvr'),
         aov: document.getElementById('sim-input-aov'),
-        targetRoas: document.getElementById('sim-input-target-roas')
+        targetRoas: document.getElementById('sim-input-target-roas'),
+        megaSale: document.getElementById('sim-input-mega-sale')
     };
     const rangeValTargetRoas = document.getElementById('range-val-target-roas');
 
@@ -128,6 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             cvr: simInputs.cvr ? simInputs.cvr.value : '',
             aov: simInputs.aov ? simInputs.aov.value : '',
             targetRoas: simInputs.targetRoas ? simInputs.targetRoas.value : '',
+            megaSale: simInputs.megaSale ? simInputs.megaSale.checked : false,
             productId: (typeof simSelectProduct !== 'undefined' && simSelectProduct) ? simSelectProduct.value : ''
         };
         localStorage.setItem('tiktok_sim_data', JSON.stringify(simData));
@@ -152,6 +154,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (simInputs.cpc && simData.cpc) simInputs.cpc.value = simData.cpc;
                 if (simInputs.cvr && simData.cvr) simInputs.cvr.value = simData.cvr;
                 if (simInputs.aov && simData.aov) simInputs.aov.value = simData.aov;
+                if (simInputs.megaSale && simData.hasOwnProperty('megaSale')) {
+                    simInputs.megaSale.checked = simData.megaSale;
+                }
                 if (simInputs.targetRoas && simData.targetRoas) {
                     simInputs.targetRoas.value = simData.targetRoas;
                     if (rangeValTargetRoas) {
@@ -167,7 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Attach simulator events
     Object.values(simInputs).forEach(input => {
         if (input) {
-            input.addEventListener('input', () => {
+            const eventType = input.type === 'checkbox' ? 'change' : 'input';
+            input.addEventListener(eventType, () => {
                 if (input.id === 'sim-input-target-roas' && rangeValTargetRoas) {
                     rangeValTargetRoas.textContent = parseFloat(input.value).toFixed(1) + 'x';
                 }
@@ -181,9 +187,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const aov = simInputs.aov ? (parseFloat(simInputs.aov.value) || 0) : 0;
         const hpp = simInputs.hpp ? (parseFloat(simInputs.hpp.value) || 0) : 0;
         const plannedSpend = simInputs.spend ? (parseFloat(simInputs.spend.value) || 0) : 0;
-        const cpc = simInputs.cpc ? (parseFloat(simInputs.cpc.value) || 500) : 500;
-        const cvr = simInputs.cvr ? (parseFloat(simInputs.cvr.value) / 100 || 0.01) : 0.01;
+        let cpc = simInputs.cpc ? (parseFloat(simInputs.cpc.value) || 500) : 500;
+        let cvr = simInputs.cvr ? (parseFloat(simInputs.cvr.value) / 100 || 0.01) : 0.01;
         const targetRoasSet = simInputs.targetRoas ? (parseFloat(simInputs.targetRoas.value) || 2.5) : 2.5;
+
+        // Apply Mega-Sale multipliers
+        const isMegaSale = simInputs.megaSale ? simInputs.megaSale.checked : false;
+        if (isMegaSale) {
+            cvr = cvr * 1.8;
+            cpc = cpc * 1.3;
+        }
 
         // Calculate margin % dynamically
         let margin = 0.4; // fallback 40%
@@ -1006,21 +1019,59 @@ document.addEventListener('DOMContentLoaded', () => {
         const roasData = campaigns.map(c => c.spend > 0 ? c.gmv / c.spend : 0);
         const targetRoasData = campaigns.map(c => c.targetRoas);
 
+        // Calculate net profit for each campaign
+        const profitData = campaigns.map(c => {
+            let netProfit = c.gmv - c.spend;
+            if (c.productId) {
+                const prod = products.find(p => p.id === c.productId);
+                if (prod) {
+                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
+                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
+                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
+                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
+                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
+                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
+                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
+                    
+                    const totalHpp = c.orders * prod.hpp;
+                    const totalAdminFee = c.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (c.orders * serviceFee);
+                    const totalLogistic = c.orders * logisticCost;
+                    
+                    netProfit = c.gmv - c.spend - totalHpp - totalAdminFee - totalLogistic;
+                }
+            }
+            return netProfit;
+        });
+
         destroyDashboardCharts();
 
-        // Chart 1: Spend vs GMV
+        // Chart 1: Spend vs GMV vs Net Profit
         charts.spendGmv = new Chart(ctxSpendGmv, {
             type: 'bar',
             data: {
                 labels: labels,
                 datasets: [
                     {
+                        label: 'Laba Bersih Riil',
+                        data: profitData,
+                        type: 'line',
+                        borderColor: '#00FF87',
+                        backgroundColor: 'rgba(0, 255, 135, 0.1)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#00FF87',
+                        pointBorderColor: '#FFFFFF',
+                        pointRadius: 4,
+                        fill: false,
+                        order: 0
+                    },
+                    {
                         label: 'Spend (Biaya)',
                         data: spendData,
                         backgroundColor: 'rgba(254, 44, 85, 0.75)',
                         borderColor: '#FE2C55',
                         borderWidth: 1,
-                        borderRadius: 6
+                        borderRadius: 6,
+                        order: 1
                     },
                     {
                         label: 'GMV (Penjualan)',
@@ -1028,7 +1079,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         backgroundColor: 'rgba(37, 244, 238, 0.75)',
                         borderColor: '#25F4EE',
                         borderWidth: 1,
-                        borderRadius: 6
+                        borderRadius: 6,
+                        order: 2
                     }
                 ]
             },
@@ -1773,6 +1825,28 @@ document.addEventListener('DOMContentLoaded', () => {
             marginEl.style.color = 'var(--accent-pink)';
         }
 
+        // Calculate Break-Even CPC based on netMargin and adjustable CVR
+        const cvrInput = document.getElementById('bd-cvr-estimate');
+        const cpcOutput = document.getElementById('bd-be-cpc');
+        
+        function updateBeCpc() {
+            if (cvrInput && cpcOutput) {
+                const cvr = parseFloat(cvrInput.value) || 2.0;
+                const beCpc = p.netMargin * (cvr / 100);
+                cpcOutput.textContent = formatRupiah(Math.max(0, beCpc));
+            }
+        }
+        
+        if (cvrInput) {
+            cvrInput.replaceWith(cvrInput.cloneNode(true));
+        }
+        
+        const newCvrInput = document.getElementById('bd-cvr-estimate');
+        if (newCvrInput) {
+            newCvrInput.addEventListener('input', updateBeCpc);
+            updateBeCpc();
+        }
+
         // Draw visual cost breakdown chart
         drawProductCostChart(p.hpp, totalFees, logisticCost, voucherRp, p.netMargin);
     }
@@ -2123,6 +2197,82 @@ document.addEventListener('DOMContentLoaded', () => {
         saveSimulatorInputsToStorage();
         updateSimulator();
     });
+
+    // ==========================================
+    // BACKUP & RESTORE HPP DATA LOGIC
+    // ==========================================
+    const btnBackupHpp = document.getElementById('btn-backup-hpp');
+    const btnRestoreHppTrigger = document.getElementById('btn-restore-hpp-trigger');
+    const inputRestoreHppFile = document.getElementById('input-restore-hpp-file');
+
+    if (btnBackupHpp) {
+        btnBackupHpp.addEventListener('click', () => {
+            if (products.length === 0) {
+                showToast('Belum ada data produk HPP untuk dibackup.', 'error');
+                return;
+            }
+
+            try {
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(products, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `tiktok_hpp_products_backup_${Date.now()}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                showToast('Backup data HPP berhasil diunduh!', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('Gagal mencadangkan data HPP.', 'error');
+            }
+        });
+    }
+
+    if (btnRestoreHppTrigger && inputRestoreHppFile) {
+        btnRestoreHppTrigger.addEventListener('click', () => {
+            inputRestoreHppFile.click();
+        });
+
+        inputRestoreHppFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.name.endsWith('.json')) {
+                showToast('Format file backup harus JSON (.json)!', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const imported = JSON.parse(evt.target.result);
+                    if (Array.isArray(imported)) {
+                        const isValid = imported.every(p => p.hasOwnProperty('id') && p.hasOwnProperty('name') && p.hasOwnProperty('price') && p.hasOwnProperty('hpp'));
+                        if (!isValid) {
+                            showToast('Format data backup HPP tidak valid!', 'error');
+                            return;
+                        }
+
+                        if (confirm(`Apakah Anda yakin ingin memulihkan ${imported.length} produk HPP? Ini akan menimpa data produk Anda saat ini.`)) {
+                            products = imported;
+                            saveProductsToStorage();
+                            renderProducts();
+                            updateProductDropdowns();
+                            updateAppState();
+                            showToast(`Berhasil memulihkan ${imported.length} data produk HPP!`, 'success');
+                        }
+                    } else {
+                        showToast('Data backup HPP harus berupa array JSON!', 'error');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    showToast('Gagal memproses file JSON backup!', 'error');
+                }
+                inputRestoreHppFile.value = '';
+            };
+            reader.readAsText(file);
+        });
+    }
 
     // Initialize Products view
     renderProducts();
