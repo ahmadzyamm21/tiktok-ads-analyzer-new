@@ -111,9 +111,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Calculator & Simulator Logic
     const simInputs = {
-        margin: document.getElementById('sim-input-margin'),
+        hpp: document.getElementById('sim-input-hpp'),
         spend: document.getElementById('sim-input-spend'),
-        ctr: document.getElementById('sim-input-ctr'),
         cpc: document.getElementById('sim-input-cpc'),
         cvr: document.getElementById('sim-input-cvr'),
         aov: document.getElementById('sim-input-aov'),
@@ -123,24 +122,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Attach simulator events
     Object.values(simInputs).forEach(input => {
-        input.addEventListener('input', () => {
-            if (input.id === 'sim-input-target-roas') {
-                rangeValTargetRoas.textContent = parseFloat(input.value).toFixed(1) + 'x';
-            }
-            updateSimulator();
-        });
+        if (input) {
+            input.addEventListener('input', () => {
+                if (input.id === 'sim-input-target-roas') {
+                    rangeValTargetRoas.textContent = parseFloat(input.value).toFixed(1) + 'x';
+                }
+                updateSimulator();
+            });
+        }
     });
 
     function updateSimulator() {
-        const margin = parseFloat(simInputs.margin.value) / 100;
-        const plannedSpend = parseFloat(simInputs.spend.value);
-        const ctr = parseFloat(simInputs.ctr.value) / 100;
-        const cpc = parseFloat(simInputs.cpc.value);
-        const cvr = parseFloat(simInputs.cvr.value) / 100;
-        const aov = parseFloat(simInputs.aov.value);
-        const targetRoasSet = parseFloat(simInputs.targetRoas.value);
+        const aov = parseFloat(simInputs.aov.value) || 0;
+        const hpp = parseFloat(simInputs.hpp.value) || 0;
+        const plannedSpend = parseFloat(simInputs.spend.value) || 0;
+        const cpc = parseFloat(simInputs.cpc.value) || 500;
+        const cvr = parseFloat(simInputs.cvr.value) / 100 || 0.01;
+        const targetRoasSet = parseFloat(simInputs.targetRoas.value) || 2.5;
 
-        // Natural Campaign metrics (before delivery restrictions from bid target)
+        // Calculate margin % dynamically
+        let margin = 0.4; // fallback 40%
+        const selectedId = simSelectProduct.value;
+        if (selectedId) {
+            const p = products.find(prod => prod.id === selectedId);
+            if (p) {
+                margin = p.marginPct / 100;
+            }
+        } else {
+            // Est. TikTok admin fees (8% AOV) + est. logistic cost (Rp 3000)
+            const estFees = (aov * 0.08) + 3000;
+            const netMargin = aov - hpp - estFees;
+            margin = aov > 0 ? Math.max(0.01, netMargin / aov) : 0.01;
+        }
+
         // Clicks = Spend / CPC
         const maxClicks = plannedSpend / cpc;
         const maxOrders = maxClicks * cvr;
@@ -148,25 +162,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const naturalRoas = maxGmv / plannedSpend;
 
         // Model Delivery Rate based on Target ROAS Set vs Natural ROAS
-        // If Target ROAS is too high, delivery decreases exponentially
         let deliveryFactor = 1.0;
         if (targetRoasSet > naturalRoas) {
-            // Under-spending occurs because TikTok algorithm struggles to find traffic that matches target
             deliveryFactor = Math.pow(naturalRoas / targetRoasSet, 2.0);
         } else {
-            // Target ROAS set is lower than natural, delivery runs at 100% capacity (and slightly boosts scale)
             deliveryFactor = Math.min(1.2, 1.0 + (naturalRoas - targetRoasSet) * 0.05);
         }
         
-        // Restrict minimum delivery factor to 5% to avoid absolute zero spend simulation
         deliveryFactor = Math.max(0.05, deliveryFactor);
 
         const actualSpend = plannedSpend * deliveryFactor;
         const actualClicks = actualSpend / cpc;
         const actualOrders = actualClicks * cvr;
         
-        // As delivery factor scales down, TikTok Shop conversions might get slightly higher quality (bid filtering)
-        // Let's model a slight conversion rate uplift for lower spend volume
         const qualityBoost = 1.0 + (1.0 - deliveryFactor) * 0.15; 
         const simulatedGmv = actualOrders * qualityBoost * aov;
         const simulatedRoas = simulatedGmv / actualSpend;
@@ -208,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else if (simulatedRoas < breakEvenRoas) {
             verdictBox.className = 'simulator-verdict alert-danger';
             verdictTitle.textContent = 'Peringatan: Kampanye Rugi (Unprofitable)';
-            verdictDesc.textContent = `ROAS Proyeksi Anda (${simulatedRoas.toFixed(2)}x) berada di bawah Break-Even ROAS (${breakEvenRoas.toFixed(2)}x) untuk produk dengan margin ${margin*100}%. Anda akan mengalami kerugian sekitar ${formatRupiah(Math.abs(netProfit))}. Saran: Jangan naikkan budget. Fokus pada menaikkan CVR toko Anda ke ${( (breakEvenRoas * actualSpend) / (actualClicks * aov) * 100 ).toFixed(2)}% atau menaikkan AOV untuk meningkatkan keuntungan alami.`;
+            verdictDesc.textContent = `ROAS Proyeksi Anda (${simulatedRoas.toFixed(2)}x) berada di bawah Break-Even ROAS (${breakEvenRoas.toFixed(2)}x) untuk produk dengan margin ${(margin*100).toFixed(1)}%. Anda akan mengalami kerugian sekitar ${formatRupiah(Math.abs(netProfit))}. Saran: Jangan naikkan budget. Fokus pada menaikkan CVR toko Anda ke ${( (breakEvenRoas * actualSpend) / (actualClicks * aov) * 100 ).toFixed(2)}% atau menaikkan AOV untuk meningkatkan keuntungan alami.`;
         } else if (targetRoasSet < naturalRoas - 0.5) {
             verdictBox.className = 'simulator-verdict';
             verdictTitle.textContent = 'Strategi Bidding Aman: Scaling Zone!';
@@ -2049,22 +2057,22 @@ document.addEventListener('DOMContentLoaded', () => {
             if (p) {
                 // Auto-fill simulator inputs
                 simInputs.aov.value = p.price;
-                simInputs.margin.value = p.marginPct.toFixed(1);
+                simInputs.hpp.value = p.hpp;
                 
                 // Set read-only to emphasize integration
                 simInputs.aov.readOnly = true;
-                simInputs.margin.readOnly = true;
+                simInputs.hpp.readOnly = true;
                 simInputs.aov.style.opacity = '0.7';
-                simInputs.margin.style.opacity = '0.7';
+                simInputs.hpp.style.opacity = '0.7';
                 
                 showToast(`Profil produk "${p.name}" dimuat ke simulator.`, 'info');
             }
         } else {
             // Re-enable manual inputs
             simInputs.aov.readOnly = false;
-            simInputs.margin.readOnly = false;
+            simInputs.hpp.readOnly = false;
             simInputs.aov.style.opacity = '1';
-            simInputs.margin.style.opacity = '1';
+            simInputs.hpp.style.opacity = '1';
         }
         updateSimulator();
     });

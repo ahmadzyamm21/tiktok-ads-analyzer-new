@@ -503,59 +503,56 @@
                         
                         <form id="sim-form" class="sim-inputs">
                             <div class="form-group">
-                                <label for="sim-select-product">Gunakan Profil Produk</label>
+                                <label for="sim-select-product"><i class="fas fa-magic mr-1"></i> Gunakan Profil Produk HPP</label>
                                 <select id="sim-select-product" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFF; padding: 10px; font-family: inherit; font-size: 14px; outline: none; transition: var(--transition-fast);">
-                                    <option value="">-- Pilih Profil (Input Manual) --</option>
+                                    <option value="">-- Pilih Profil (Input Manual di Bawah) --</option>
                                 </select>
+                                <span class="input-help">Pilih produk yang sudah Anda buat di tab HPP untuk mengisi data otomatis.</span>
                             </div>
 
                             <div class="form-group">
-                                <label for="sim-input-margin">Margin Keuntungan Produk (%)</label>
-                                <div class="input-with-addon">
-                                    <input type="number" id="sim-input-margin" value="40" min="1" max="100">
-                                    <span class="addon">%</span>
-                                </div>
-                                <span class="input-help">Digunakan untuk menghitung Break-Even ROAS.</span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="sim-input-spend">Rencana Anggaran (Ad Spend)</label>
+                                <label for="sim-input-aov">Harga Jual Produk (Rp)</label>
                                 <div class="input-with-addon">
                                     <span class="addon">Rp</span>
-                                    <input type="number" id="sim-input-spend" value="10000000" min="100000" step="50000">
+                                    <input type="number" id="sim-input-aov" value="120000" min="1000" step="1000">
                                 </div>
+                                <span class="input-help">Harga jual barang Anda di TikTok Shop.</span>
                             </div>
 
                             <div class="form-group">
-                                <label for="sim-input-ctr">Target CTR (Click-Through Rate)</label>
-                                <div class="input-with-addon">
-                                    <input type="number" id="sim-input-ctr" value="1.2" min="0.1" max="10" step="0.1">
-                                    <span class="addon">%</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="sim-input-cpc">Biaya Per Klik (CPC) Rata-rata</label>
+                                <label for="sim-input-hpp">Modal / HPP Produk (Rp)</label>
                                 <div class="input-with-addon">
                                     <span class="addon">Rp</span>
-                                    <input type="number" id="sim-input-cpc" value="1500" min="100" step="50">
+                                    <input type="number" id="sim-input-hpp" value="60000" min="0" step="1000">
                                 </div>
+                                <span class="input-help">Harga modal beli barang dari supplier.</span>
                             </div>
 
                             <div class="form-group">
-                                <label for="sim-input-cvr">Conversion Rate Toko (CVR)</label>
-                                <div class="input-with-addon">
-                                    <input type="number" id="sim-input-cvr" value="2.5" min="0.1" max="50" step="0.1">
-                                    <span class="addon">%</span>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="sim-input-aov">Rata-rata Nilai Pesanan (AOV)</label>
+                                <label for="sim-input-spend">Rencana Anggaran Iklan Harian</label>
                                 <div class="input-with-addon">
                                     <span class="addon">Rp</span>
-                                    <input type="number" id="sim-input-aov" value="120000" min="5000" step="1000">
+                                    <input type="number" id="sim-input-spend" value="500000" min="50000" step="50000">
                                 </div>
+                                <span class="input-help">Budget harian yang ingin Anda habiskan untuk iklan.</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sim-input-cpc">Biaya per Klik Iklan (CPC)</label>
+                                <div class="input-with-addon">
+                                    <span class="addon">Rp</span>
+                                    <input type="number" id="sim-input-cpc" value="600" min="100" step="50">
+                                </div>
+                                <span class="input-help">Biaya rata-rata tiap kali orang mengklik iklan Anda (umumnya Rp 400 - Rp 800).</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sim-input-cvr">Tingkat Pembeli / Konversi (%)</label>
+                                <div class="input-with-addon">
+                                    <input type="number" id="sim-input-cvr" value="2.0" min="0.1" max="50" step="0.1">
+                                    <span class="addon">%</span>
+                                </div>
+                                <span class="input-help">Dari 100 orang yang klik, berapa orang yang belanja? (umumnya 1% - 3%).</span>
                             </div>
 
                             <div class="form-group range-group">
@@ -564,7 +561,7 @@
                                     <span id="range-val-target-roas">3.0x</span>
                                 </div>
                                 <input type="range" id="sim-input-target-roas" min="1.0" max="8.0" step="0.1" value="3.0">
-                                <span class="input-help">Mengatur Target ROAS yang diset pada kampanye GMV Max.</span>
+                                <span class="input-help">Target kelipatan omset iklan yang diatur pada TikTok Ads Manager.</span>
                             </div>
                         </form>
                     </div>
