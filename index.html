@@ -583,6 +583,14 @@
                                 <span class="input-help" style="margin-left: 24px; margin-top: 4px; display: block;">Simulasikan lonjakan CVR (1.8x) dan persaingan bid CPC (1.3x) saat event diskon besar.</span>
                             </div>
 
+                            <div class="form-group" style="margin-top: 15px; margin-bottom: 15px;">
+                                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;">
+                                    <input type="checkbox" id="sim-input-include-ppn" style="width: 16px; height: 16px; accent-color: var(--accent-cyan);">
+                                    <span style="font-weight: 600; color: var(--accent-cyan); font-size: 13.0px;"><i class="fas fa-percent"></i> Hitung Pajak Iklan PPN 11% (Indonesia)</span>
+                                </label>
+                                <span class="input-help" style="margin-left: 24px; margin-top: 4px; display: block;">Tambahkan PPN 11% dari biaya iklan Anda untuk menghitung modal belanja riil & ROAS bersih pasca-pajak.</span>
+                            </div>
+
                             <div class="form-group range-group">
                                 <div class="range-labels">
                                     <label for="sim-input-target-roas">Target ROAS Set</label>
@@ -613,6 +621,29 @@
                             <div class="kpi-card card">
                                 <span class="kpi-label">Proyeksi Profit Bersih</span>
                                 <span class="kpi-value" id="sim-val-profit">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <!-- Additional Simulator Metrics Breakdown -->
+                        <div id="sim-ppn-breakdown-box" style="display: none; margin-top: 15px; margin-bottom: 20px; padding: 15px 20px; background: rgba(37, 244, 238, 0.03); border: 1px solid rgba(37, 244, 238, 0.15); border-radius: 8px;" class="card">
+                            <h4 style="margin: 0 0 10px 0; font-size: 13px; color: var(--accent-cyan); display: flex; align-items: center; gap: 6px;"><i class="fas fa-calculator"></i> Rincian Modal Iklan Pasca-Pajak (PPN 11%)</h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; font-size: 12px;">
+                                <div>
+                                    <span class="text-gray">Budget Iklan TikTok (Spend):</span>
+                                    <div style="font-weight: 600; color: #FFF; font-size: 13px; margin-top: 2px;" id="sim-ppn-spend-ads">Rp 0</div>
+                                </div>
+                                <div>
+                                    <span class="text-gray">Pajak PPN 11% (Indonesia):</span>
+                                    <div style="font-weight: 600; color: var(--accent-pink); font-size: 13px; margin-top: 2px;" id="sim-ppn-tax">Rp 0</div>
+                                </div>
+                                <div>
+                                    <span class="text-gray">Total Uang Keluar (Cash Spend):</span>
+                                    <div style="font-weight: 700; color: var(--accent-cyan); font-size: 13px; margin-top: 2px;" id="sim-ppn-spend-total">Rp 0</div>
+                                </div>
+                                <div>
+                                    <span class="text-gray">ROAS Riil Setelah Pajak:</span>
+                                    <div style="font-weight: 700; color: #FFF; font-size: 13px; margin-top: 2px;" id="sim-ppn-roas-net">0.00x</div>
+                                </div>
                             </div>
                         </div>
 

@@ -117,7 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
         cvr: document.getElementById('sim-input-cvr'),
         aov: document.getElementById('sim-input-aov'),
         targetRoas: document.getElementById('sim-input-target-roas'),
-        megaSale: document.getElementById('sim-input-mega-sale')
+        megaSale: document.getElementById('sim-input-mega-sale'),
+        includePpn: document.getElementById('sim-input-include-ppn')
     };
     const rangeValTargetRoas = document.getElementById('range-val-target-roas');
 
@@ -130,6 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             aov: simInputs.aov ? simInputs.aov.value : '',
             targetRoas: simInputs.targetRoas ? simInputs.targetRoas.value : '',
             megaSale: simInputs.megaSale ? simInputs.megaSale.checked : false,
+            includePpn: simInputs.includePpn ? simInputs.includePpn.checked : false,
             productId: (typeof simSelectProduct !== 'undefined' && simSelectProduct) ? simSelectProduct.value : ''
         };
         localStorage.setItem('tiktok_sim_data', JSON.stringify(simData));
@@ -156,6 +158,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (simInputs.aov && simData.aov) simInputs.aov.value = simData.aov;
                 if (simInputs.megaSale && simData.hasOwnProperty('megaSale')) {
                     simInputs.megaSale.checked = simData.megaSale;
+                }
+                if (simInputs.includePpn && simData.hasOwnProperty('includePpn')) {
+                    simInputs.includePpn.checked = simData.includePpn;
                 }
                 if (simInputs.targetRoas && simData.targetRoas) {
                     simInputs.targetRoas.value = simData.targetRoas;
@@ -239,7 +244,28 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const breakEvenRoas = 1 / margin;
         const grossProfit = simulatedGmv * margin;
-        const netProfit = grossProfit - actualSpend;
+        
+        const isPpnActive = simInputs.includePpn ? simInputs.includePpn.checked : false;
+        let netProfit = grossProfit - actualSpend;
+        
+        const ppnBreakdownBox = document.getElementById('sim-ppn-breakdown-box');
+        if (ppnBreakdownBox) {
+            if (isPpnActive) {
+                const ppnTax = actualSpend * 0.11;
+                const totalCashSpend = actualSpend + ppnTax;
+                netProfit = grossProfit - totalCashSpend;
+                const roasNet = totalCashSpend > 0 ? simulatedGmv / totalCashSpend : 0;
+                
+                document.getElementById('sim-ppn-spend-ads').textContent = formatRupiah(actualSpend);
+                document.getElementById('sim-ppn-tax').textContent = `+ ${formatRupiah(ppnTax)}`;
+                document.getElementById('sim-ppn-spend-total').textContent = formatRupiah(totalCashSpend);
+                document.getElementById('sim-ppn-roas-net').textContent = roasNet.toFixed(2) + 'x';
+                
+                ppnBreakdownBox.style.display = 'block';
+            } else {
+                ppnBreakdownBox.style.display = 'none';
+            }
+        }
 
         // Update KPI displays
         document.getElementById('sim-val-gmv').textContent = formatRupiah(simulatedGmv);
