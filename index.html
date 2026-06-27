@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikTok Shop GMV Max & Max ROAS Analyzer</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (Excel Parser) -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <i class="fab fa-tiktok"></i>
+                </div>
+                <div class="logo-text">
+                    <h2>GMV Max</h2>
+                    <span>ROAS Analyzer</span>
+                </div>
+            </div>
+            
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-tab="dashboard">
+                    <i class="fas fa-chart-pie"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="products">
+                    <i class="fas fa-box"></i>
+                    <span>Kalkulator HPP</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="simulator">
+                    <i class="fas fa-sliders-h"></i>
+                    <span>ROAS Simulator</span>
+                </a>
+                <a href="#" class="nav-item" data-tab="batch-analyzer">
+                    <i class="fas fa-table"></i>
+                    <span>Batch Analyzer</span>
+                </a>
+
+                <a href="#" class="nav-item" data-tab="recommendations">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Recommendations</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="shop-badge" id="shop-badge-container">
+                    <span id="shop-logo-container" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; background: rgba(255,255,255,0.03);">
+                        <i class="fas fa-store text-cyan" id="shop-logo-icon" style="font-size: 16px;"></i>
+                    </span>
+                    <div class="shop-info">
+                        <span class="shop-name" id="shop-name-display">My TikTok Shop</span>
+                        <span class="shop-status">Connected</span>
+                    </div>
+                </div>
+                <p class="credit">v1.0 &bull; DeepMind Antigravity</p>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="main-header">
+                <div class="header-title">
+                    <h1 id="page-title">Dashboard Overview</h1>
+                    <p id="page-description">Analisis performa iklan TikTok Shop GMV Max & optimasi ROAS.</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" id="btn-load-demo">
+                        <i class="fas fa-database"></i> Load Demo Data
+                    </button>
+                    <button class="btn btn-primary" id="btn-print-report">
+                        <i class="fas fa-file-pdf"></i> Export Report
+                    </button>
+                </div>
+            </header>
+
+            <!-- TAB 1: DASHBOARD OVERVIEW -->
+            <section id="tab-dashboard" class="tab-content active">
+                <!-- Metrik Grid -->
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Total Spend (Biaya)</span>
+                            <div class="metric-icon bg-pink-alpha"><i class="fas fa-wallet text-pink"></i></div>
+                        </div>
+                        <div class="metric-value" id="val-total-spend">Rp 0</div>
+                        <div class="metric-footer">
+                            <span class="metric-sub" id="val-sub-spend">Berdasarkan kampanye aktif</span>
+                        </div>
+                    </div>
+                    
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Total GMV (Revenue)</span>
+                            <div class="metric-icon bg-cyan-alpha"><i class="fas fa-shopping-bag text-cyan"></i></div>
+                        </div>
+                        <div class="metric-value text-glow-cyan" id="val-total-gmv">Rp 0</div>
+                        <div class="metric-footer">
+                            <span class="metric-sub" id="val-sub-gmv">Total penjualan teratribusi</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Est. Laba Bersih</span>
+                            <div class="metric-icon" style="background-color: rgba(0, 255, 135, 0.1);"><i class="fas fa-coins" style="color: var(--accent-green);"></i></div>
+                        </div>
+                        <div class="metric-value" id="val-total-net-profit" style="color: var(--accent-green); text-shadow: 0 0 10px rgba(0, 255, 135, 0.5);">Rp 0</div>
+                        <div class="metric-footer">
+                            <span class="metric-sub" id="val-sub-profit">Setelah potong HPP & Biaya</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card highlight-card">
+                        <div class="metric-header">
+                            <span class="metric-title text-white">ROAS Aktual</span>
+                            <div class="metric-icon bg-white-alpha"><i class="fas fa-chart-line text-white"></i></div>
+                        </div>
+                        <div class="metric-value text-white text-glow-white" id="val-avg-roas">0.00x</div>
+                        <div class="metric-footer">
+                            <span class="metric-sub text-gray-light" id="val-roas-status">Target ROAS: 0.00x (0%)</span>
+                        </div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Conversions (Orders)</span>
+                            <div class="metric-icon bg-purple-alpha"><i class="fas fa-shopping-cart text-purple"></i></div>
+                        </div>
+                        <div class="metric-value" id="val-total-orders">0</div>
+                        <div class="metric-footer">
+                            <span class="metric-sub" id="val-avg-cvr">CVR: 0.00%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Metrics Row -->
+                <div class="sub-metrics-row">
+                    <div class="sub-metric">
+                        <span class="sub-label">Avg. CPC</span>
+                        <span class="sub-value" id="val-avg-cpc">Rp 0</span>
+                    </div>
+                    <div class="sub-metric">
+                        <span class="sub-label">Avg. CPA</span>
+                        <span class="sub-value" id="val-avg-cpa">Rp 0</span>
+                    </div>
+                    <div class="sub-metric">
+                        <span class="sub-label">Avg. CPM</span>
+                        <span class="sub-value" id="val-avg-cpm">Rp 0</span>
+                    </div>
+                    <div class="sub-metric">
+                        <span class="sub-label">Avg. CTR</span>
+                        <span class="sub-value" id="val-avg-ctr">0.00%</span>
+                    </div>
+                    <div class="sub-metric">
+                        <span class="sub-label">Average Order Value</span>
+                        <span class="sub-value" id="val-avg-aov">Rp 0</span>
+                    </div>
+                </div>
+
+                <!-- Charts Section -->
+                <div class="charts-grid">
+                    <div class="chart-container card">
+                        <h3>Performa Kampanye (Spend vs GMV)</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-spend-gmv"></canvas>
+                        </div>
+                    </div>
+                    <div class="chart-container card">
+                        <h3>Efisiensi Bidding (ROAS vs Target ROAS)</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-roas-comparison"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Diagnostics Banner -->
+                <div class="diagnostics-summary-card card" id="diagnostics-summary">
+                    <div class="diag-header">
+                        <div class="diag-title">
+                            <i class="fas fa-stethoscope text-cyan"></i>
+                            <h3>Hasil Diagnosis Cepat Kampanye</h3>
+                        </div>
+                        <span class="badge badge-cyan" id="diag-count">0 Rekomendasi</span>
+                    </div>
+                    <p class="diag-desc">Berdasarkan metrik kampanye Anda saat ini, berikut adalah diagnosis performa singkat.</p>
+                    <ul class="diag-list" id="diag-short-list">
+                        <li class="diag-empty">Silakan load data demo atau unggah file kampanye di Batch Analyzer untuk melihat diagnosis.</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- TAB: PRODUCT MANAGER & HPP CALCULATOR -->
+            <section id="tab-products" class="tab-content">
+                <div class="simulator-layout">
+                    <!-- Left: Add/Edit Product Form -->
+                    <div class="simulator-controls card">
+                        <h3>Input Biaya Produk & HPP</h3>
+                        <p class="section-desc">Masukkan detail biaya produk Anda untuk menghitung margin bersih riil dan Break-Even ROAS secara otomatis.</p>
+                        
+                        <form id="product-form" class="sim-inputs">
+                            <input type="hidden" id="prod-id">
+                            
+                            <div class="form-group">
+                                <label for="prod-name">Nama Produk</label>
+                                <input type="text" id="prod-name" placeholder="misal: Kemeja Flanel Premium" required style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFF; padding: 10px; font-family: inherit; font-size: 14px; outline: none; transition: var(--transition-fast);">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="prod-price">Harga Jual per Pcs (AOV)</label>
+                                <div class="input-with-addon">
+                                    <span class="addon">Rp</span>
+                                    <input type="number" id="prod-price" placeholder="150000" min="0" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="prod-hpp">HPP / COGS (Harga Modal Beli Produk)</label>
+                                <div class="input-with-addon">
+                                    <span class="addon">Rp</span>
+                                    <input type="number" id="prod-hpp" placeholder="60000" min="0" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group flex-1">
+                                    <label for="prod-marketplace-fee">Biaya Marketplace (%)</label>
+                                    <div class="input-with-addon">
+                                        <input type="number" id="prod-marketplace-fee" value="4.0" min="0" max="50" step="0.1" required>
+                                        <span class="addon">%</span>
+                                    </div>
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label for="prod-dynamic-commission">Komisi Dinamis (%)</label>
+                                    <div class="input-with-addon">
+                                        <input type="number" id="prod-dynamic-commission" value="2.0" min="0" max="50" step="0.1" required>
+                                        <span class="addon">%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row mt-3">
+                                <div class="form-group flex-1">
+                                    <label for="prod-affiliate-fee">Komisi Afiliasi (%)</label>
+                                    <div class="input-with-addon">
+                                        <input type="number" id="prod-affiliate-fee" value="0.0" min="0" max="50" step="0.1" required>
+                                        <span class="addon">%</span>
+                                    </div>
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label for="prod-service-fee">Biaya Layanan (Fixed)</label>
+                                    <div class="input-with-addon">
+                                        <span class="addon">Rp</span>
+                                        <input type="number" id="prod-service-fee" value="1250" min="0" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-row mt-3">
+                                <div class="form-group flex-1">
+                                    <label for="prod-sap-fee">Biaya SAP (%) <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Opsional)</span></label>
+                                    <div class="input-with-addon">
+                                        <input type="number" id="prod-sap-fee" value="0.0" min="0" max="50" step="0.1">
+                                        <span class="addon">%</span>
+                                    </div>
+                                </div>
+                                <div class="form-group flex-1">
+                                    <label for="prod-growth-xtra-fee">Growth Xtra (%) <span style="font-size: 11px; color: var(--text-muted); font-weight: normal;">(Opsional)</span></label>
+                                    <div class="input-with-addon">
+                                        <input type="number" id="prod-growth-xtra-fee" value="0.0" min="0" max="50" step="0.1">
+                                        <span class="addon">%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group mt-3">
+                                <label for="prod-logistic-cost">Fee Logistic / Ongkir Toko</label>
+                                <div class="input-with-addon">
+                                    <span class="addon">Rp</span>
+                                    <input type="number" id="prod-logistic-cost" value="3000" min="0" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row mt-3">
+                                <div class="form-group flex-1">
+                                    <label for="prod-voucher-type">Tipe Voucher Toko</label>
+                                    <select id="prod-voucher-type" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFFFFF; padding: 9px 12px; font-family: inherit; font-size: 13.5px; outline: none; width: 100%; transition: var(--transition-fast);">
+                                        <option value="none">Tanpa Voucher</option>
+                                        <option value="nominal">Potongan Nominal (Rp)</option>
+                                        <option value="percent">Potongan Persentase (%)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group flex-1" id="group-prod-voucher-val" style="display: none;">
+                                    <label for="prod-voucher-val">Nilai Voucher</label>
+                                    <div class="input-with-addon">
+                                        <input type="number" id="prod-voucher-val" value="0" min="0" required>
+                                        <span class="addon" id="addon-voucher-unit">Rp</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-actions mt-3">
+                                <button type="submit" class="btn btn-cyan btn-full" id="btn-save-product">
+                                    <i class="fas fa-save"></i> Simpan Produk
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-full mt-2" id="btn-cancel-product" style="display: none;">
+                                    <i class="fas fa-plus"></i> Batal & Tambah Baru
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right: Product List & Summary -->
+                    <div class="simulator-results-container">
+                        <div style="font-size: 14px; color: var(--accent-cyan); margin-bottom: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px;" id="prod-summary-title">
+                            <i class="fas fa-info-circle"></i> Menampilkan Detail Profil: (Belum ada produk)
+                        </div>
+                        <!-- KPI Row for selected/last added product -->
+                        <div class="results-kpi-grid" id="product-kpi-summary">
+                            <div class="kpi-card card border-cyan">
+                                <span class="kpi-label">Margin Bersih per Unit</span>
+                                <span class="kpi-value text-glow-cyan" id="prod-summary-margin-rp">Rp 0</span>
+                            </div>
+                            <div class="kpi-card card border-pink">
+                                <span class="kpi-label">Break-Even ROAS</span>
+                                <span class="kpi-value text-glow-pink" id="prod-summary-be-roas">0.00x</span>
+                            </div>
+                            <div class="kpi-card card">
+                                <span class="kpi-label">Margin %</span>
+                                <span class="kpi-value" id="prod-summary-margin-pct">0%</span>
+                            </div>
+                        </div>
+
+                        <!-- Rincian Alokasi Biaya per Unit Card -->
+                        <div class="card mt-3" id="product-detail-breakdown" style="background: rgba(255,255,255,0.02); border: 1px solid var(--border-color); display: none; margin-bottom: 20px;">
+                            <h4 style="margin-top: 0; color: var(--accent-cyan); font-size: 14px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px; margin-bottom: 15px;">
+                                <i class="fas fa-calculator"></i> Simulasi Rincian Alokasi Biaya per Unit
+                            </h4>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; font-size: 13.5px;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span class="text-gray">Harga Jual Asli:</span>
+                                        <span id="bd-price" style="font-weight: 600;">Rp 0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span class="text-gray">Voucher Toko:</span>
+                                        <span id="bd-voucher" style="color: var(--accent-pink);">- Rp 0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; font-weight: bold;">
+                                        <span>Harga Bersih (Diterima):</span>
+                                        <span id="bd-net-price">Rp 0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px; margin-top: 10px;">
+                                        <span class="text-gray">HPP (Harga Modal Beli):</span>
+                                        <span id="bd-hpp" style="color: var(--accent-pink); font-weight: 500;">- Rp 0</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span class="text-gray">Biaya Marketplace:</span>
+                                        <span id="bd-marketplace" style="color: var(--accent-pink);">- Rp 0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span class="text-gray">Komisi Dinamis:</span>
+                                        <span id="bd-dynamic" style="color: var(--accent-pink);">- Rp 0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span class="text-gray">Komisi Afiliasi:</span>
+                                        <span id="bd-affiliate" style="color: var(--accent-pink);">- Rp 0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span class="text-gray">Biaya SAP:</span>
+                                        <span id="bd-sap" style="color: var(--accent-pink);">- Rp 0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span class="text-gray">Growth Xtra:</span>
+                                        <span id="bd-growth-xtra" style="color: var(--accent-pink);">- Rp 0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span class="text-gray">Biaya Layanan Tetap:</span>
+                                        <span id="bd-service" style="color: var(--accent-pink);">- Rp 0</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                        <span class="text-gray">Fee Logistic / Ongkir:</span>
+                                        <span id="bd-logistic" style="color: var(--accent-pink); font-weight: 500;">- Rp 0</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="border-top: 1px dashed var(--border-color); margin-top: 15px; padding-top: 10px; display: flex; justify-content: space-between; font-weight: bold; font-size: 14px; color: var(--accent-green);">
+                                <span>MARGIN BERSIH RIIL (Laba per Unit):</span>
+                                <span id="bd-margin">Rp 0 (0%)</span>
+                            </div>
+                        </div>
+
+                        <!-- Product List Card -->
+                        <div class="table-card card">
+                            <div class="table-header">
+                                <h3>Daftar Produk & Profil HPP</h3>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="premium-table" id="products-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nama Produk</th>
+                                            <th>Harga Jual</th>
+                                            <th>HPP</th>
+                                            <th>Voucher Toko</th>
+                                            <th>Biaya Admin</th>
+                                            <th>Fee Logistic</th>
+                                            <th>Margin Bersih</th>
+                                            <th>BE ROAS</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="products-table-body">
+                                        <tr>
+                                            <td colspan="9" class="text-center text-gray">Belum ada produk. Masukkan detail produk di sebelah kiri untuk membuat profil HPP.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: MAX ROAS BIDDING SIMULATOR -->
+            <section id="tab-simulator" class="tab-content">
+                <div class="simulator-layout">
+                    <!-- Control Panel (Left) -->
+                    <div class="simulator-controls card">
+                        <h3>Parameter Simulasi</h3>
+                        <p class="section-desc">Simulasikan bagaimana perubahan Target ROAS atau perubahan budget memengaruhi GMV dan ROAS Anda.</p>
+                        
+                        <form id="sim-form" class="sim-inputs">
+                            <div class="form-group">
+                                <label for="sim-select-product">Gunakan Profil Produk</label>
+                                <select id="sim-select-product" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFF; padding: 10px; font-family: inherit; font-size: 14px; outline: none; transition: var(--transition-fast);">
+                                    <option value="">-- Pilih Profil (Input Manual) --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sim-input-margin">Margin Keuntungan Produk (%)</label>
+                                <div class="input-with-addon">
+                                    <input type="number" id="sim-input-margin" value="40" min="1" max="100">
+                                    <span class="addon">%</span>
+                                </div>
+                                <span class="input-help">Digunakan untuk menghitung Break-Even ROAS.</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sim-input-spend">Rencana Anggaran (Ad Spend)</label>
+                                <div class="input-with-addon">
+                                    <span class="addon">Rp</span>
+                                    <input type="number" id="sim-input-spend" value="10000000" min="100000" step="50000">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sim-input-ctr">Target CTR (Click-Through Rate)</label>
+                                <div class="input-with-addon">
+                                    <input type="number" id="sim-input-ctr" value="1.2" min="0.1" max="10" step="0.1">
+                                    <span class="addon">%</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sim-input-cpc">Biaya Per Klik (CPC) Rata-rata</label>
+                                <div class="input-with-addon">
+                                    <span class="addon">Rp</span>
+                                    <input type="number" id="sim-input-cpc" value="1500" min="100" step="50">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sim-input-cvr">Conversion Rate Toko (CVR)</label>
+                                <div class="input-with-addon">
+                                    <input type="number" id="sim-input-cvr" value="2.5" min="0.1" max="50" step="0.1">
+                                    <span class="addon">%</span>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="sim-input-aov">Rata-rata Nilai Pesanan (AOV)</label>
+                                <div class="input-with-addon">
+                                    <span class="addon">Rp</span>
+                                    <input type="number" id="sim-input-aov" value="120000" min="5000" step="1000">
+                                </div>
+                            </div>
+
+                            <div class="form-group range-group">
+                                <div class="range-labels">
+                                    <label for="sim-input-target-roas">Target ROAS Set</label>
+                                    <span id="range-val-target-roas">3.0x</span>
+                                </div>
+                                <input type="range" id="sim-input-target-roas" min="1.0" max="8.0" step="0.1" value="3.0">
+                                <span class="input-help">Mengatur Target ROAS yang diset pada kampanye GMV Max.</span>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Simulator Results (Right) -->
+                    <div class="simulator-results-container">
+                        <!-- KPI Row -->
+                        <div class="results-kpi-grid">
+                            <div class="kpi-card card border-cyan">
+                                <span class="kpi-label">Proyeksi GMV</span>
+                                <span class="kpi-value text-glow-cyan" id="sim-val-gmv">Rp 0</span>
+                            </div>
+                            <div class="kpi-card card border-pink">
+                                <span class="kpi-label">Proyeksi ROAS</span>
+                                <span class="kpi-value text-glow-pink" id="sim-val-roas">0.00x</span>
+                            </div>
+                            <div class="kpi-card card">
+                                <span class="kpi-label">Break-Even ROAS</span>
+                                <span class="kpi-value" id="sim-val-be-roas">2.50x</span>
+                            </div>
+                            <div class="kpi-card card">
+                                <span class="kpi-label">Proyeksi Profit Bersih</span>
+                                <span class="kpi-value" id="sim-val-profit">Rp 0</span>
+                            </div>
+                        </div>
+
+                        <!-- Analysis Chart & Insight -->
+                        <div class="simulator-details card">
+                            <h3>Analisis Pengaruh Target ROAS terhadap Delivery & Profit</h3>
+                            <p class="section-desc">Hubungan teoritis antara bid Target ROAS dengan laju penyerapan budget (Delivery) dan efisiensi konversi.</p>
+                            
+                            <div class="chart-wrapper-large">
+                                <canvas id="chart-sim-curves"></canvas>
+                            </div>
+
+                            <div class="simulator-verdict" id="sim-verdict-box">
+                                <div class="verdict-icon"><i class="fas fa-info-circle"></i></div>
+                                <div class="verdict-content">
+                                    <h4 id="sim-verdict-title">Rekomendasi Strategi Bidding</h4>
+                                    <p id="sim-verdict-desc">Masukkan parameter atau ubah slider Target ROAS untuk mendapatkan strategi bidding terbaik.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: BATCH CAMPAIGN ANALYZER -->
+            <section id="tab-batch-analyzer" class="tab-content">
+                <div class="analyzer-layout">
+                    <!-- Input & Upload Section -->
+                    <div class="analyzer-controls-row">
+                        <!-- Upload Box -->
+                        <label class="upload-box card" id="csv-dropzone" for="csv-file-input" style="cursor: pointer; display: block;">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <h4>Drag & Drop Laporan TikTok Ads (Excel / CSV)</h4>
+                            <p>atau klik untuk memilih file dari komputer Anda.</p>
+                            <span class="file-spec">Mendukung file Excel (.xlsx, .xls) & CSV hasil ekspor</span>
+                        </label>
+                        <input type="file" id="csv-file-input" accept=".csv, .xlsx, .xls" style="display: none;">
+
+                        <!-- Manual Add Form -->
+                        <div class="manual-form-card card">
+                            <h3>Tambah Kampanye Manon-CSV</h3>
+                            <form id="add-campaign-form" class="inline-form">
+                                 <div class="form-row">
+                                    <div class="form-group flex-1">
+                                        <label for="add-camp-product">Hubungkan ke Produk HPP</label>
+                                        <select id="add-camp-product" style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFFFFF; padding: 9px 12px; font-family: inherit; font-size: 13.5px; outline: none; width: 100%; transition: var(--transition-fast);">
+                                            <option value="">-- Tanpa HPP (Kalkulasi Standar) --</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group flex-1">
+                                        <label for="add-camp-name">Nama Kampanye / Produk</label>
+                                        <input type="text" id="add-camp-name" placeholder="misal: Tas Selempang Canvas" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row mt-3">
+                                    <div class="form-group flex-1">
+                                        <label for="add-camp-spend">Spend (Rp)</label>
+                                        <input type="number" id="add-camp-spend" placeholder="1000000" min="0" required>
+                                    </div>
+                                    <div class="form-group flex-1">
+                                        <label for="add-camp-clicks">Clicks</label>
+                                        <input type="number" id="add-camp-clicks" placeholder="500" min="0" required>
+                                    </div>
+                                    <div class="form-group flex-1">
+                                        <label for="add-camp-impressions">Impressions</label>
+                                        <input type="number" id="add-camp-impressions" placeholder="50000" min="0" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-row mt-3">
+                                    <div class="form-group flex-1">
+                                        <label for="add-camp-orders">Orders</label>
+                                        <input type="number" id="add-camp-orders" placeholder="20" min="0" required>
+                                    </div>
+                                    <div class="form-group flex-1">
+                                        <label for="add-camp-gmv">GMV (Rp)</label>
+                                        <input type="number" id="add-camp-gmv" placeholder="2400000" min="0" required>
+                                    </div>
+                                    <div class="form-group flex-1">
+                                        <label for="add-camp-target-roas">Target ROAS</label>
+                                        <input type="number" id="add-camp-target-roas" placeholder="2.5" min="0.1" step="0.1" value="2.5" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-actions mt-3">
+                                    <button type="submit" class="btn btn-cyan btn-full">
+                                        <i class="fas fa-plus"></i> Tambah Kampanye
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Campaigns Table Section -->
+                    <div class="table-card card">
+                        <div class="table-header">
+                            <h3>Tabel Perbandingan Kampanye</h3>
+                            <div class="table-actions">
+                                <button class="btn btn-secondary btn-sm" id="btn-clear-table">
+                                    <i class="fas fa-trash"></i> Bersihkan Semua
+                                </button>
+                                <button class="btn btn-cyan btn-sm" id="btn-export-csv">
+                                    <i class="fas fa-download"></i> Ekspor CSV
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="premium-table" id="campaigns-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nama Kampanye</th>
+                                        <th>Produk</th>
+                                        <th>Spend (Biaya)</th>
+                                        <th>GMV (Revenue)</th>
+                                        <th>Laba Bersih Riil</th>
+                                        <th>Target ROAS</th>
+                                        <th>ROAS Aktual</th>
+                                        <th>Orders (CVR)</th>
+                                        <th>CTR</th>
+                                        <th>CPC</th>
+                                        <th>CPA</th>
+                                        <th>Status</th>
+                                        <th>Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="campaigns-table-body">
+                                    <tr>
+                                        <td colspan="11" class="text-center text-gray">Belum ada data kampanye. Silakan klik "Load Demo Data", isi formulir di atas, atau drag file CSV ke kotak unggah.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: SHOP RECOMMENDATIONS -->
+            <section id="tab-recommendations" class="tab-content">
+                <div class="recommendations-layout">
+                    <!-- Filters -->
+                    <div class="rec-summary card">
+                        <div class="rec-summary-content">
+                            <h3>Pusat Diagnosis & Strategi TikTok Shop</h3>
+                            <p>Mesin analisis kami secara otomatis mengevaluasi performa kampanye GMV Max Anda berdasarkan standar industri TikTok Shop. Berikut adalah rekomendasi perbaikan toko dan materi kreatif Anda.</p>
+                        </div>
+                        <div class="rec-stats">
+                            <div class="rec-stat-box">
+                                <span class="rec-stat-val text-pink" id="rec-count-critical">0</span>
+                                <span class="rec-stat-lbl">Tindakan Kritis</span>
+                            </div>
+                            <div class="rec-stat-box">
+                                <span class="rec-stat-val text-cyan" id="rec-count-warning">0</span>
+                                <span class="rec-stat-lbl">Peringatan</span>
+                            </div>
+                            <div class="rec-stat-box">
+                                <span class="rec-stat-val text-green" id="rec-count-good">0</span>
+                                <span class="rec-stat-lbl">Kampanye Sehat</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recommendations List -->
+                    <div class="recommendations-container" id="recommendations-list">
+                        <!-- Default empty state -->
+                        <div class="card text-center py-5 text-gray">
+                            <i class="fas fa-lightbulb fa-3x mb-3 text-cyan"></i>
+                            <h3>Belum ada rekomendasi aktif</h3>
+                            <p>Silakan muat data kampanye terlebih dahulu melalui tab Dashboard atau Batch Analyzer untuk menghasilkan diagnosis detail.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modal Pengaturan Toko -->
+    <div class="modal" id="shop-settings-modal">
+        <div class="modal-content card" style="max-width: 400px; padding: 24px; position: relative; border-radius: 16px; background-color: rgba(22, 22, 37, 0.98);">
+            <h3 style="margin-top: 0; color: var(--accent-cyan); display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-store"></i> Pengaturan Toko
+            </h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Sesuaikan nama toko dan logo Anda yang ditampilkan di aplikasi.</p>
+            
+            <div class="form-group">
+                <label for="settings-shop-name" style="display: block; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; font-weight: 600; color: var(--text-muted);">Nama Toko</label>
+                <input type="text" id="settings-shop-name" value="My TikTok Shop" required style="width: 100%; box-sizing: border-box; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFF; padding: 10px; font-family: inherit; font-size: 14px; outline: none;">
+            </div>
+            
+            <div class="form-group mt-3" style="margin-top: 15px;">
+                <label style="display: block; font-size: 12px; margin-bottom: 6px; text-transform: uppercase; font-weight: 600; color: var(--text-muted);">Logo Toko</label>
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 8px;">
+                    <div id="settings-logo-preview" style="width: 48px; height: 48px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 1px dashed var(--border-color); display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                        <i class="fas fa-store text-cyan" id="settings-logo-preview-icon" style="font-size: 20px;"></i>
+                        <img id="settings-logo-preview-img" src="" style="width: 100%; height: 100%; object-fit: cover; display: none;">
+                    </div>
+                    <button type="button" class="btn btn-secondary" id="btn-upload-logo-trigger" style="padding: 6px 12px; font-size: 12px;">
+                        <i class="fas fa-upload"></i> Unggah Foto
+                    </button>
+                    <input type="file" id="settings-shop-logo-file" accept="image/*" style="display: none;">
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end;">
+                <button type="button" class="btn btn-secondary" id="btn-close-shop-settings">Batal</button>
+                <button type="button" class="btn btn-cyan" id="btn-save-shop-settings">Simpan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast">
+        <i class="fas fa-info-circle toast-icon"></i>
+        <span class="toast-message">Notifikasi</span>
+    </div>
+
+    <!-- Custom Script -->
+    <script src="app.js"></script>
+</body>
+</html>
