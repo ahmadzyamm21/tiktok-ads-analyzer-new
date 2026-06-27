@@ -48,6 +48,10 @@
                     <i class="fas fa-table"></i>
                     <span>Batch Analyzer</span>
                 </a>
+                <a href="#" class="nav-item" data-tab="daily">
+                    <i class="fas fa-chart-line"></i>
+                    <span>Analisis Harian</span>
+                </a>
 
                 <a href="#" class="nav-item" data-tab="recommendations">
                     <i class="fas fa-lightbulb"></i>
@@ -777,6 +781,101 @@
                                     </tr>
                                 </tbody>
                             </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB: DAILY AD PERFORMANCE ANALYZER -->
+            <section id="tab-daily" class="tab-content">
+                <div class="simulator-layout">
+                    <!-- Left Column: Add Daily Record Form -->
+                    <div class="simulator-controls card">
+                        <h3>Input Performa Iklan Harian</h3>
+                        <p class="section-desc">Mulai catat performa harian Anda secara teratur untuk melihat grafik tren laba bersih toko Anda.</p>
+                        
+                        <form id="daily-log-form" class="sim-inputs">
+                            <div class="form-group">
+                                <label for="daily-date">Tanggal Catat</label>
+                                <input type="date" id="daily-date" required style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFF; padding: 10px; font-family: inherit; font-size: 14px; outline: none; width: 100%;">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="daily-product">Hubungkan dengan Produk (HPP)</label>
+                                <select id="daily-product" style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; color: #FFF; padding: 10px; font-family: inherit; font-size: 14px; outline: none; width: 100%;">
+                                    <option value="">-- Tanpa HPP (Hanya Potong Iklan) --</option>
+                                </select>
+                                <span class="input-help">Pilih produk agar laba bersih otomatis dikurangi HPP & fee admin.</span>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="daily-spend">Biaya Iklan (Spend)</label>
+                                <div class="input-with-addon">
+                                    <span class="addon">Rp</span>
+                                    <input type="number" id="daily-spend" placeholder="misal: 250000" min="0" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="daily-gmv">Omset Penjualan (GMV)</label>
+                                <div class="input-with-addon">
+                                    <span class="addon">Rp</span>
+                                    <input type="number" id="daily-gmv" placeholder="misal: 1200000" min="0" required>
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label for="daily-orders">Jumlah Order (Pcs)</label>
+                                <div class="input-with-addon">
+                                    <input type="number" id="daily-orders" placeholder="misal: 10" min="0" required>
+                                    <span class="addon">pcs</span>
+                                </div>
+                            </div>
+
+                            <div class="form-actions mt-3">
+                                <button type="submit" class="btn btn-cyan btn-full">
+                                    <i class="fas fa-plus"></i> Simpan Catatan Harian
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Right Column: Chart & Daily History -->
+                    <div class="simulator-results-container">
+                        <!-- Chart Card -->
+                        <div class="chart-container card" style="margin-bottom: 20px;">
+                            <h3>Grafik Tren Performa Harian</h3>
+                            <div class="chart-wrapper-large" style="height: 250px;">
+                                <canvas id="chart-daily-trend"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- History List Card -->
+                        <div class="table-card card">
+                            <div class="table-header">
+                                <h3>Riwayat Catatan Harian</h3>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="premium-table" id="daily-logs-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Tanggal</th>
+                                            <th>Produk Terkait</th>
+                                            <th>Spend</th>
+                                            <th>GMV</th>
+                                            <th>Orders</th>
+                                            <th>ROAS</th>
+                                            <th>Laba Bersih</th>
+                                            <th>Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="daily-logs-table-body">
+                                        <tr>
+                                            <td colspan="8" class="text-center text-gray">Belum ada catatan harian. Masukkan data di sebelah kiri untuk merekam catatan baru.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>

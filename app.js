@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let campaigns = JSON.parse(localStorage.getItem('tiktok_campaigns')) || [];
     let charts = {};
     let products = JSON.parse(localStorage.getItem('tiktok_products')) || [];
+    let dailyLogs = JSON.parse(localStorage.getItem('tiktok_daily_logs')) || [];
 
     // DOM Elements
     const navItems = document.querySelectorAll('.nav-item');
@@ -41,6 +42,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tabId === 'simulator') {
                 setTimeout(updateSimulator, 50);
             }
+            if (tabId === 'daily') {
+                setTimeout(updateDailyChart, 50);
+            }
         });
     });
 
@@ -57,6 +61,10 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'simulator':
                 pageTitle.textContent = 'Max ROAS Bidding Simulator';
                 pageDescription.textContent = 'Simulasikan strategi bidding dan penyesuaian Target ROAS Anda.';
+                break;
+            case 'daily':
+                pageTitle.textContent = 'Analisis Iklan Harian';
+                pageDescription.textContent = 'Catat, evaluasi, dan pantau tren performa pengeluaran iklan & laba bersih harian Anda.';
                 break;
             case 'batch-analyzer':
                 pageTitle.textContent = 'Batch Campaign Analyzer';
@@ -2193,6 +2201,8 @@ document.addEventListener('DOMContentLoaded', () => {
             opt2.textContent = p.name;
             addCampProduct.appendChild(opt2);
         });
+
+        updateDailyProductDropdown();
     }
 
     // Integrate with Simulator selection change
@@ -2432,7 +2442,239 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Load on start
+    // ==========================================
+    // DAILY AD PERFORMANCE TRACKER LOGIC
+    // ==========================================
+    const dailyLogForm = document.getElementById('daily-log-form');
+    const dailyProductSelect = document.getElementById('daily-product');
+    const dailyLogsTableBody = document.getElementById('daily-logs-table-body');
+
+    // Auto-set daily-date input to today's date
+    const dailyDateInput = document.getElementById('daily-date');
+    if (dailyDateInput) {
+        const today = new Date().toISOString().split('T')[0];
+        dailyDateInput.value = today;
+    }
+
+    function saveDailyLogsToStorage() {
+        localStorage.setItem('tiktok_daily_logs', JSON.stringify(dailyLogs));
+    }
+
+    function updateDailyProductDropdown() {
+        if (!dailyProductSelect) return;
+        
+        dailyProductSelect.innerHTML = '<option value="">-- Tanpa HPP (Hanya Potong Iklan) --</option>';
+        
+        products.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.name;
+            dailyProductSelect.appendChild(opt);
+        });
+    }
+
+    function renderDailyLogs() {
+        if (!dailyLogsTableBody) return;
+
+        if (dailyLogs.length === 0) {
+            dailyLogsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="text-center text-gray">Belum ada catatan harian. Masukkan data di sebelah kiri untuk merekam catatan baru.</td>
+                </tr>
+            `;
+            return;
+        }
+
+        const sortedLogs = [...dailyLogs].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        dailyLogsTableBody.innerHTML = '';
+        sortedLogs.forEach(log => {
+            const tr = document.createElement('tr');
+            const formattedDate = new Date(log.date).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+            
+            let productName = '<span class="text-muted">-</span>';
+            let netProfit = log.gmv - log.spend; // fallback
+            
+            if (log.productId) {
+                const prod = products.find(p => p.id === log.productId);
+                if (prod) {
+                    productName = prod.name;
+                    
+                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
+                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
+                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
+                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
+                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
+                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
+                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
+
+                    const totalHpp = log.orders * prod.hpp;
+                    const totalAdminFee = log.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (log.orders * serviceFee);
+                    const totalLogistic = log.orders * logisticCost;
+
+                    netProfit = log.gmv - log.spend - totalHpp - totalAdminFee - totalLogistic;
+                }
+            }
+
+            const roas = log.spend > 0 ? (log.gmv / log.spend) : 0;
+            const profitColor = netProfit >= 0 ? 'var(--accent-green)' : 'var(--accent-pink)';
+
+            tr.innerHTML = `
+                <td><strong>${formattedDate}</strong></td>
+                <td>${productName}</td>
+                <td>${formatRupiah(log.spend)}</td>
+                <td>${formatRupiah(log.gmv)}</td>
+                <td>${log.orders} pcs</td>
+                <td><span class="badge ${roas >= 2.5 ? 'badge-cyan' : 'badge-pink'}">${roas.toFixed(2)}x</span></td>
+                <td style="color: ${profitColor}; font-weight: 600;">${formatRupiah(netProfit)}</td>
+                <td>
+                    <button class="btn btn-secondary btn-sm btn-delete-daily" data-id="${log.id}" style="padding: 4px 8px; font-size: 11px; cursor: pointer;">
+                        <i class="fas fa-trash"></i> Hapus
+                    </button>
+                </td>
+            `;
+            dailyLogsTableBody.appendChild(tr);
+        });
+
+        document.querySelectorAll('.btn-delete-daily').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const logId = btn.getAttribute('data-id');
+                if (confirm('Apakah Anda yakin ingin menghapus catatan harian ini?')) {
+                    dailyLogs = dailyLogs.filter(log => log.id !== logId);
+                    saveDailyLogsToStorage();
+                    renderDailyLogs();
+                    updateDailyChart();
+                }
+            });
+        });
+    }
+
+    function updateDailyChart() {
+        const canvas = document.getElementById('chart-daily-trend');
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (charts.dailyTrend) {
+            charts.dailyTrend.destroy();
+            charts.dailyTrend = null;
+        }
+
+        if (dailyLogs.length === 0) return;
+
+        const sortedLogs = [...dailyLogs].sort((a, b) => new Date(a.date) - new Date(b.date));
+        const labels = sortedLogs.map(log => {
+            const d = new Date(log.date);
+            return `${d.getDate()}/${d.getMonth() + 1}`;
+        });
+
+        const spendData = sortedLogs.map(log => log.spend);
+        const gmvData = sortedLogs.map(log => log.gmv);
+        const profitData = sortedLogs.map(log => {
+            let netProfit = log.gmv - log.spend;
+            if (log.productId) {
+                const prod = products.find(p => p.id === log.productId);
+                if (prod) {
+                    const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
+                    const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
+                    const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
+                    const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
+                    const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
+                    const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
+                    const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
+
+                    const totalHpp = log.orders * prod.hpp;
+                    const totalAdminFee = log.gmv * ((marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee) / 100) + (log.orders * serviceFee);
+                    const totalLogistic = log.orders * logisticCost;
+
+                    netProfit = log.gmv - log.spend - totalHpp - totalAdminFee - totalLogistic;
+                }
+            }
+            return netProfit;
+        });
+
+        charts.dailyTrend = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Omset (GMV)',
+                        data: gmvData,
+                        borderColor: '#25F4EE',
+                        backgroundColor: 'rgba(37, 244, 238, 0.05)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Laba Bersih Riil',
+                        data: profitData,
+                        borderColor: '#00FF87',
+                        backgroundColor: 'rgba(0, 255, 135, 0.05)',
+                        borderWidth: 2.5,
+                        pointRadius: 3,
+                        tension: 0.2
+                    },
+                    {
+                        label: 'Spend (Biaya)',
+                        data: spendData,
+                        borderColor: '#FE2C55',
+                        backgroundColor: 'rgba(254, 44, 85, 0.05)',
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        tension: 0.2
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: '#90A0B7', font: { family: 'Outfit', size: 11 } } }
+                },
+                scales: {
+                    x: { ticks: { color: '#90A0B7', font: { family: 'Outfit' } }, grid: { color: 'rgba(255, 255, 255, 0.03)' } },
+                    y: { 
+                        ticks: { 
+                            color: '#90A0B7', 
+                            font: { family: 'Outfit' },
+                            callback: value => 'Rp ' + (value >= 1e6 ? (value/1e6).toFixed(1) + 'jt' : (value/1e3).toFixed(0) + 'rb')
+                        }, 
+                        grid: { color: 'rgba(255, 255, 255, 0.03)' } 
+                    }
+                }
+            }
+        });
+    }
+
+    if (dailyLogForm) {
+        dailyLogForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const newLog = {
+                id: 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                date: document.getElementById('daily-date').value,
+                productId: document.getElementById('daily-product').value,
+                spend: parseFloat(document.getElementById('daily-spend').value) || 0,
+                gmv: parseFloat(document.getElementById('daily-gmv').value) || 0,
+                orders: parseFloat(document.getElementById('daily-orders').value) || 0
+            };
+
+            dailyLogs.push(newLog);
+            saveDailyLogsToStorage();
+            
+            document.getElementById('daily-spend').value = '';
+            document.getElementById('daily-gmv').value = '';
+            document.getElementById('daily-orders').value = '';
+
+            renderDailyLogs();
+            updateDailyChart();
+            showToast('Catatan harian berhasil disimpan!', 'success');
+        });
+    }
+
     // Load on start
     loadShopSettings();
+    updateDailyProductDropdown();
+    renderDailyLogs();
 });
