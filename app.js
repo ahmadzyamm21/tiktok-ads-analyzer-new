@@ -2,10 +2,92 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // App State
-    let campaigns = JSON.parse(localStorage.getItem('tiktok_campaigns')) || [];
+    let campaigns = [];
+    let products = [];
+    let dailyLogs = [];
     let charts = {};
-    let products = JSON.parse(localStorage.getItem('tiktok_products')) || [];
-    let dailyLogs = JSON.parse(localStorage.getItem('tiktok_daily_logs')) || [];
+
+    try {
+        campaigns = JSON.parse(localStorage.getItem('tiktok_campaigns')) || [];
+    } catch(e) {
+        console.error("Failed to parse campaigns, resetting.", e);
+    }
+    try {
+        products = JSON.parse(localStorage.getItem('tiktok_products')) || [];
+    } catch(e) {
+        console.error("Failed to parse products, resetting.", e);
+    }
+    try {
+        dailyLogs = JSON.parse(localStorage.getItem('tiktok_daily_logs')) || [];
+    } catch(e) {
+        console.error("Failed to parse daily logs, resetting.", e);
+    }
+
+    // Sanitize Campaigns
+    if (!Array.isArray(campaigns)) {
+        campaigns = [];
+    } else {
+        campaigns = campaigns.map(c => {
+            if (!c || typeof c !== 'object') return null;
+            return {
+                id: c.id || 'camp_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                name: c.name || 'Unnamed Campaign',
+                productId: c.productId || '',
+                spend: parseFloat(c.spend) || 0,
+                impressions: parseInt(c.impressions) || 0,
+                clicks: parseInt(c.clicks) || 0,
+                orders: parseInt(c.orders) || 0,
+                gmv: parseFloat(c.gmv) || 0,
+                targetRoas: parseFloat(c.targetRoas) || 2.5
+            };
+        }).filter(Boolean);
+    }
+
+    // Sanitize Products
+    if (!Array.isArray(products)) {
+        products = [];
+    } else {
+        products = products.map(p => {
+            if (!p || typeof p !== 'object') return null;
+            return {
+                id: p.id || 'prod_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                name: p.name || 'Unnamed Product',
+                price: parseFloat(p.price) || 0,
+                hpp: parseFloat(p.hpp) || 0,
+                marketplaceFee: p.marketplaceFee !== undefined ? parseFloat(p.marketplaceFee) : 4.0,
+                dynamicCommission: p.dynamicCommission !== undefined ? parseFloat(p.dynamicCommission) : 2.0,
+                affiliateFee: p.affiliateFee !== undefined ? parseFloat(p.affiliateFee) : 0.0,
+                sapFee: p.sapFee !== undefined ? parseFloat(p.sapFee) : 0.0,
+                growthXtraFee: p.growthXtraFee !== undefined ? parseFloat(p.growthXtraFee) : 0.0,
+                serviceFee: p.serviceFee !== undefined ? parseFloat(p.serviceFee) : 1250,
+                logisticCost: p.logisticCost !== undefined ? parseFloat(p.logisticCost) : 3000,
+                otherCost: parseFloat(p.otherCost) || 0,
+                voucherType: p.voucherType || 'none',
+                voucherVal: parseFloat(p.voucherVal) || 0,
+                voucherRp: parseFloat(p.voucherRp) || 0,
+                netMargin: parseFloat(p.netMargin) || 0,
+                marginPct: parseFloat(p.marginPct) || 0,
+                beRoas: parseFloat(p.beRoas) || 2.0
+            };
+        }).filter(Boolean);
+    }
+
+    // Sanitize Daily Logs
+    if (!Array.isArray(dailyLogs)) {
+        dailyLogs = [];
+    } else {
+        dailyLogs = dailyLogs.map(log => {
+            if (!log || typeof log !== 'object') return null;
+            return {
+                id: log.id || 'log_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                date: log.date || new Date().toISOString().split('T')[0],
+                productId: log.productId || '',
+                spend: parseFloat(log.spend) || 0,
+                gmv: parseFloat(log.gmv) || 0,
+                orders: parseFloat(log.orders) || 0
+            };
+        }).filter(Boolean);
+    }
 
     // DOM Elements
     const navItems = document.querySelectorAll('.nav-item');
@@ -2588,7 +2670,13 @@ document.addEventListener('DOMContentLoaded', () => {
             dailyLogsTableBody.innerHTML = '';
             sortedLogs.forEach(log => {
                 const tr = document.createElement('tr');
-                const formattedDate = new Date(log.date).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+                let formattedDate = 'Tanpa Tanggal';
+                if (log.date) {
+                    const d = new Date(log.date);
+                    if (!isNaN(d.getTime())) {
+                        formattedDate = d.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' });
+                    }
+                }
                 
                 let productName = '<span class="text-muted">-</span>';
                 let netProfit = log.gmv - log.spend; // fallback
@@ -2634,6 +2722,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (err) {
             console.error('Error rendering daily logs:', err);
+            showToast('Gagal menampilkan riwayat harian: ' + err.message, 'error');
         }
     }
 
@@ -2732,6 +2821,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         } catch (err) {
             console.error('Error rendering daily chart:', err);
+            showToast('Gagal menampilkan grafik harian: ' + err.message, 'error');
         }
     }
 
