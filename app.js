@@ -1,4 +1,8 @@
-// TikTok Shop GMV Max & Max ROAS Analyzer Logic
+window.addEventListener('error', function(e) {
+    const msg = e.message + ' (' + e.filename + ':' + e.lineno + ')';
+    console.error('Global JS Error:', msg);
+    alert('Sistem mendeteksi error pada browser Anda:\n\n' + msg + '\n\nSilakan salin/laporkan pesan ini.');
+});
 
 document.addEventListener('DOMContentLoaded', () => {
     // App State
@@ -2838,6 +2842,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!dateEl || !spendEl || !gmvEl || !ordersEl) {
                     showToast('Gagal menemukan input form harian!', 'error');
+                    return;
+                }
+
+                if (!dateEl.value) {
+                    showToast('Harap pilih Tanggal Catat terlebih dahulu!', 'error');
                     return;
                 }
 
