@@ -1193,31 +1193,46 @@ input[type="range"]::-webkit-slider-thumb:hover {
     .app-container, .modal, .toast {
         display: none !important;
     }
-    /* Show print layout */
-    #print-report-layout {
+    body {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    
+    #print-report-layout, #print-daily-layout {
+        display: none !important;
+    }
+    
+    body.print-mode-dashboard #print-report-layout {
         display: block !important;
         background-color: #FFFFFF !important;
         color: #000000 !important;
         font-family: 'Outfit', 'Inter', sans-serif !important;
         padding: 10px !important;
     }
-    body {
+    
+    body.print-mode-daily #print-daily-layout {
+        display: block !important;
         background-color: #FFFFFF !important;
         color: #000000 !important;
+        font-family: 'Outfit', 'Inter', sans-serif !important;
+        padding: 10px !important;
     }
+    
     /* Table styles for printing */
-    #print-report-layout table {
+    #print-report-layout table, #print-daily-layout table {
         width: 100% !important;
         border-collapse: collapse !important;
         margin-bottom: 20px !important;
     }
     #print-report-layout th, 
-    #print-report-layout td {
+    #print-report-layout td,
+    #print-daily-layout th,
+    #print-daily-layout td {
         border-bottom: 1px solid #ddd !important;
         padding: 6px !important;
         color: #111 !important;
     }
-    #print-report-layout th {
+    #print-report-layout th, #print-daily-layout th {
         background-color: #f5f5f5 !important;
         font-weight: bold !important;
     }

@@ -204,6 +204,12 @@
                             <canvas id="chart-roas-comparison"></canvas>
                         </div>
                     </div>
+                    <div class="chart-container card">
+                        <h3>Struktur Alokasi Pengeluaran & Profit (Breakdown GMV)</h3>
+                        <div class="chart-wrapper">
+                            <canvas id="chart-overall-cost-donut"></canvas>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Live Diagnostics Banner -->
@@ -916,9 +922,14 @@
                         <div class="table-card card">
                             <div class="table-header" style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <h3>Riwayat Catatan Harian</h3>
-                                <button id="btn-export-daily-csv" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px 10px;">
-                                    <i class="fas fa-file-export mr-1"></i> Ekspor CSV
-                                </button>
+                                <div style="display: flex; gap: 8px;">
+                                    <button id="btn-export-daily-csv" class="btn btn-secondary btn-sm" style="font-size: 11px; padding: 6px 10px;">
+                                        <i class="fas fa-file-export mr-1"></i> Ekspor CSV
+                                    </button>
+                                    <button id="btn-print-daily-report" class="btn btn-cyan btn-sm" style="font-size: 11px; padding: 6px 10px;">
+                                        <i class="fas fa-print mr-1"></i> Cetak PDF
+                                    </button>
+                                </div>
                             </div>
                             <div class="table-responsive">
                                 <table class="premium-table" id="daily-logs-table">
@@ -940,6 +951,32 @@
                                         </tr>
                                     </tbody>
                                 </table>
+                            </div>
+                        </div>
+
+                        <!-- Financial Calendar Card -->
+                        <div class="card mt-4" style="border: 1px solid rgba(255, 255, 255, 0.05); background: var(--card-bg);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                                <h3 style="margin: 0; color: #FFF; font-size: 15px;"><i class="fas fa-calendar-alt text-cyan mr-2"></i>Kalender Keuangan Bulanan</h3>
+                                <div style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.03); padding: 4px 8px; border-radius: 8px; border: 1px solid var(--border-color);">
+                                    <button id="btn-prev-month" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 10px; cursor: pointer;"><i class="fas fa-chevron-left"></i></button>
+                                    <span id="calendar-month-year" style="font-weight: 600; color: #FFF; font-size: 12px; min-width: 100px; text-align: center; font-family: 'Outfit';">Bulan</span>
+                                    <button id="btn-next-month" class="btn btn-secondary btn-sm" style="padding: 4px 8px; font-size: 10px; cursor: pointer;"><i class="fas fa-chevron-right"></i></button>
+                                </div>
+                            </div>
+                            
+                            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; text-align: center; font-size: 11px; color: #90A0B7; font-weight: 600; margin-bottom: 8px;">
+                                <div>MIN</div><div>SEN</div><div>SEL</div><div>RAB</div><div>KAM</div><div>JUM</div><div>SAB</div>
+                            </div>
+                            
+                            <div id="financial-calendar" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px;">
+                                <!-- Days rendered dynamically -->
+                            </div>
+                            
+                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 15px; margin-top: 15px; font-size: 11px; color: #90A0B7;">
+                                <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(0, 255, 135, 0.15); border: 1px solid var(--accent-green);"></span> Untung</div>
+                                <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(254, 44, 85, 0.15); border: 1px solid var(--accent-pink);"></span> Rugi/Boncos</div>
+                                <div style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color);"></span> Kosong</div>
                             </div>
                         </div>
                     </div>
@@ -1081,6 +1118,69 @@
             <div id="print-recommendations-container" style="display: flex; flex-direction: column; gap: 8px;">
                 <!-- Dynamic -->
             </div>
+        </div>
+    </div>
+
+    <!-- Hidden Layout for PDF Printing - Daily Logs -->
+    <div id="print-daily-layout" style="display: none;">
+        <!-- Header -->
+        <div class="print-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #333; padding-bottom: 15px; margin-bottom: 20px;">
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div id="print-daily-shop-logo" style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden; background: #eee; display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-store" style="font-size: 24px; color: #333;"></i>
+                </div>
+                <div>
+                    <h1 id="print-daily-shop-name" style="margin: 0; font-size: 20px; color: #111;">My TikTok Shop</h1>
+                    <p style="margin: 2px 0 0 0; font-size: 11px; color: #666;">Laporan Catatan Keuangan & Performa Iklan Harian</p>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <h3 style="margin: 0; font-size: 13px; color: #333;">Laporan Performa Harian</h3>
+                <p id="print-daily-report-date" style="margin: 2px 0 0 0; font-size: 10px; color: #777;">Tanggal Cetak: -</p>
+            </div>
+        </div>
+
+        <!-- KPI Grid -->
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 25px;">
+            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 10px; color: #666; text-transform: uppercase;">Total Spend (Iklan)</div>
+                <div id="print-daily-total-spend" style="font-size: 16px; font-weight: bold; margin-top: 5px;">Rp 0</div>
+            </div>
+            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 10px; color: #666; text-transform: uppercase;">Total GMV (Omset)</div>
+                <div id="print-daily-total-gmv" style="font-size: 16px; font-weight: bold; margin-top: 5px;">Rp 0</div>
+            </div>
+            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 6px;">
+                <div style="font-size: 10px; color: #666; text-transform: uppercase;">Rata-Rata ROAS</div>
+                <div id="print-daily-avg-roas" style="font-size: 16px; font-weight: bold; margin-top: 5px;">0.00x</div>
+            </div>
+            <div style="border: 1px solid #ddd; padding: 12px; border-radius: 6px; background-color: #f9f9f9;">
+                <div style="font-size: 10px; color: #666; text-transform: uppercase; font-weight: bold;">Laba Bersih Riil</div>
+                <div id="print-daily-net-profit" style="font-size: 16px; font-weight: bold; margin-top: 5px; color: #008744;">Rp 0</div>
+            </div>
+        </div>
+
+        <!-- Daily Logs List -->
+        <div style="margin-bottom: 25px;">
+            <h3 style="font-size: 13px; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; color: #111;">
+                <i class="fas fa-history"></i> Riwayat Transaksi Catatan Harian
+            </h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px;">
+                <thead>
+                    <tr style="background-color: #f5f5f5; border-bottom: 2px solid #bbb;">
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid #ccc; width: 15%;">Tanggal</th>
+                        <th style="padding: 6px; text-align: left; border-bottom: 1px solid #ccc; width: 25%;">Produk Terkait</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Spend</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">GMV</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Orders</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">ROAS</th>
+                        <th style="padding: 6px; text-align: right; border-bottom: 1px solid #ccc;">Laba Bersih</th>
+                    </tr>
+                </thead>
+                <tbody id="print-daily-table-body">
+                    <!-- Dynamic -->
+                </tbody>
+            </table>
         </div>
     </div>
 

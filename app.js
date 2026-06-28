@@ -1212,6 +1212,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function destroyDashboardCharts() {
         if (charts.spendGmv) charts.spendGmv.destroy();
         if (charts.roasComp) charts.roasComp.destroy();
+        if (charts.overallCostDonut) charts.overallCostDonut.destroy();
     }
 
     function updateDashboardCharts() {
@@ -1340,6 +1341,116 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         });
+
+        // Chart 3: Struktur Pengeluaran & Profit (Breakdown GMV)
+        const canvasOverallCost = document.getElementById('chart-overall-cost-donut');
+        if (canvasOverallCost) {
+            const ctxOverallCostDonut = canvasOverallCost.getContext('2d');
+            
+            let totalGmv = 0;
+            let totalSpend = 0;
+            let totalHpp = 0;
+            let totalAdminFees = 0;
+            let totalNetProfit = 0;
+            
+            campaigns.forEach(c => {
+                totalGmv += c.gmv;
+                totalSpend += c.spend;
+                
+                let campaignHpp = 0;
+                let campaignFees = 0;
+                let campaignProfit = c.gmv - c.spend; // fallback
+                
+                if (c.productId) {
+                    const prod = products.find(p => p.id === c.productId);
+                    if (prod) {
+                        campaignHpp = c.orders * prod.hpp;
+                        
+                        const marketplaceFee = prod.marketplaceFee !== undefined ? prod.marketplaceFee : 4.0;
+                        const dynamicCommission = prod.dynamicCommission !== undefined ? prod.dynamicCommission : 2.0;
+                        const affiliateFee = prod.affiliateFee !== undefined ? prod.affiliateFee : 0.0;
+                        const sapFee = prod.sapFee !== undefined ? prod.sapFee : 0.0;
+                        const growthXtraFee = prod.growthXtraFee !== undefined ? prod.growthXtraFee : 0.0;
+                        const serviceFee = prod.serviceFee !== undefined ? prod.serviceFee : 1250;
+                        const logisticCost = prod.logisticCost !== undefined ? prod.logisticCost : 3000;
+                        const otherCost = prod.otherCost || 0;
+                        
+                        const feePct = marketplaceFee + dynamicCommission + affiliateFee + sapFee + growthXtraFee;
+                        campaignFees = (c.gmv * (feePct / 100)) + (c.orders * (serviceFee + logisticCost + otherCost));
+                        
+                        campaignProfit = (c.orders * getProductNetMargin(prod)) - c.spend;
+                    }
+                }
+                
+                totalHpp += campaignHpp;
+                totalAdminFees += campaignFees;
+                totalNetProfit += campaignProfit;
+            });
+
+            // If no campaigns or GMV is 0, let's show an empty donut chart
+            const rawGmv = totalGmv;
+            if (totalGmv === 0) {
+                totalGmv = 1;
+            }
+
+            const displayProfit = Math.max(0, totalNetProfit);
+            const displaySpend = totalSpend;
+            const displayHpp = totalHpp;
+            const displayFees = totalAdminFees;
+            
+            const sumComponents = displayProfit + displaySpend + displayHpp + displayFees;
+            let displayOther = 0;
+            if (sumComponents < totalGmv) {
+                displayOther = totalGmv - sumComponents;
+            }
+
+            const donutLabels = ['Laba Bersih Riil', 'Biaya Iklan (Spend)', 'Modal Produk (HPP)', 'Biaya Admin & Komisi Platform'];
+            const donutData = [displayProfit, displaySpend, displayHpp, displayFees];
+            const donutColors = ['#00FF87', '#FE2C55', '#FFaa00', '#25F4EE'];
+
+            if (displayOther > 0) {
+                donutLabels.push('Margin Kotor/Lainnya');
+                donutData.push(displayOther);
+                donutColors.push('#90A0B7');
+            }
+
+            charts.overallCostDonut = new Chart(ctxOverallCostDonut, {
+                type: 'doughnut',
+                data: {
+                    labels: donutLabels,
+                    datasets: [{
+                        data: donutData,
+                        backgroundColor: donutColors,
+                        borderWidth: 1,
+                        borderColor: '#1e222b'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                color: '#90A0B7',
+                                font: { family: 'Outfit', size: 10 },
+                                boxWidth: 12
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const val = context.raw || 0;
+                                    const pct = ((val / totalGmv) * 100).toFixed(1);
+                                    return `${context.label}: ${formatRupiah(val)} (${pct}%)`;
+                                }
+                            }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+        }
     }
 
     // Recommendation Engine & Diagnostic Generator
@@ -1819,9 +1930,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
+        document.body.classList.add('print-mode-dashboard');
+        document.body.classList.remove('print-mode-daily');
         showToast('Membuka dialog pencetakan laporan PDF...', 'info');
         setTimeout(() => {
             window.print();
+            setTimeout(() => {
+                document.body.classList.remove('print-mode-dashboard');
+            }, 1000);
         }, 500);
     });
 
@@ -2832,6 +2948,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
+            
+            // Render the financial calendar
+            renderCalendar();
         } catch (err) {
             console.error('Error rendering daily logs:', err);
             showToast('Gagal menampilkan riwayat harian: ' + err.message, 'error');
@@ -2937,6 +3056,138 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+
+
+    // Financial Calendar State & Logic
+    let currentCalendarYear = new Date().getFullYear();
+    let currentCalendarMonth = new Date().getMonth();
+
+    function renderCalendar() {
+        try {
+            const calendarContainer = document.getElementById('financial-calendar');
+            const monthYearLabel = document.getElementById('calendar-month-year');
+            if (!calendarContainer || !monthYearLabel) return;
+
+            const monthNames = [
+                "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+                "Juli", "Agustus", "September", "Oktober", "November", "Desember"
+            ];
+
+            monthYearLabel.textContent = `${monthNames[currentCalendarMonth]} ${currentCalendarYear}`;
+
+            const firstDay = new Date(currentCalendarYear, currentCalendarMonth, 1).getDay();
+            const numDays = new Date(currentCalendarYear, currentCalendarMonth + 1, 0).getDate();
+
+            calendarContainer.innerHTML = '';
+
+            // Render empty spacer cells
+            for (let i = 0; i < firstDay; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.style.padding = '12px 6px';
+                calendarContainer.appendChild(emptyCell);
+            }
+
+            // Render days
+            for (let day = 1; day <= numDays; day++) {
+                const dateStr = `${currentCalendarYear}-${String(currentCalendarMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const logsToday = Array.isArray(dailyLogs) ? dailyLogs.filter(log => log.date === dateStr) : [];
+                
+                const cell = document.createElement('div');
+                cell.style.padding = '10px 4px';
+                cell.style.borderRadius = '6px';
+                cell.style.fontFamily = "'Outfit', sans-serif";
+                cell.style.fontSize = '12px';
+                cell.style.fontWeight = '600';
+                cell.style.textAlign = 'center';
+                cell.style.cursor = 'default';
+                cell.style.transition = 'all 0.15s ease';
+                cell.textContent = day;
+
+                if (logsToday.length > 0) {
+                    let daySpend = 0;
+                    let dayGmv = 0;
+                    let dayProfit = 0;
+
+                    logsToday.forEach(log => {
+                        daySpend += log.spend;
+                        dayGmv += log.gmv;
+                        
+                        let netProfit = log.gmv - log.spend;
+                        if (log.productId && Array.isArray(products)) {
+                            const prod = products.find(p => p.id === log.productId);
+                            if (prod) {
+                                netProfit = (log.orders * getProductNetMargin(prod)) - log.spend;
+                            }
+                        }
+                        dayProfit += netProfit;
+                    });
+
+                    cell.style.cursor = 'pointer';
+                    if (dayProfit >= 0) {
+                        cell.style.background = 'rgba(0, 255, 135, 0.08)';
+                        cell.style.border = '1px solid rgba(0, 255, 135, 0.25)';
+                        cell.style.color = '#00FF87';
+                    } else {
+                        cell.style.background = 'rgba(254, 44, 85, 0.08)';
+                        cell.style.border = '1px solid rgba(254, 44, 85, 0.25)';
+                        cell.style.color = 'var(--accent-pink)';
+                    }
+
+                    cell.addEventListener('mouseenter', () => {
+                        cell.style.transform = 'scale(1.08)';
+                        cell.style.boxShadow = '0 0 8px rgba(255, 255, 255, 0.05)';
+                    });
+                    cell.addEventListener('mouseleave', () => {
+                        cell.style.transform = 'scale(1)';
+                        cell.style.boxShadow = 'none';
+                    });
+
+                    cell.addEventListener('click', () => {
+                        const profitText = dayProfit >= 0 ? `Untung: ${formatRupiah(dayProfit)}` : `Rugi: ${formatRupiah(Math.abs(dayProfit))}`;
+                        const toastType = dayProfit >= 0 ? 'success' : 'error';
+                        showToast(
+                            `Detail ${day} ${monthNames[currentCalendarMonth]}:\nSpend: ${formatRupiah(daySpend)} | GMV: ${formatRupiah(dayGmv)} | ${profitText}`,
+                            toastType
+                        );
+                    });
+                } else {
+                    cell.style.background = 'rgba(255, 255, 255, 0.01)';
+                    cell.style.border = '1px solid rgba(255, 255, 255, 0.02)';
+                    cell.style.color = '#607087';
+                }
+
+                calendarContainer.appendChild(cell);
+            }
+        } catch (err) {
+            console.error('Error rendering calendar:', err);
+        }
+    }
+
+    const btnPrevMonth = document.getElementById('btn-prev-month');
+    const btnNextMonth = document.getElementById('btn-next-month');
+
+    if (btnPrevMonth) {
+        btnPrevMonth.addEventListener('click', () => {
+            currentCalendarMonth--;
+            if (currentCalendarMonth < 0) {
+                currentCalendarMonth = 11;
+                currentCalendarYear--;
+            }
+            renderCalendar();
+        });
+    }
+
+    if (btnNextMonth) {
+        btnNextMonth.addEventListener('click', () => {
+            currentCalendarMonth++;
+            if (currentCalendarMonth > 11) {
+                currentCalendarMonth = 0;
+                currentCalendarYear++;
+            }
+            renderCalendar();
+        });
+    }
+
     if (dailyLogForm) {
         dailyLogForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -3036,6 +3287,106 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 console.error('Error exporting daily CSV:', err);
                 showToast('Gagal ekspor CSV: ' + err.message, 'error');
+            }
+        });
+    }
+
+    const btnPrintDailyReport = document.getElementById('btn-print-daily-report');
+    if (btnPrintDailyReport) {
+        btnPrintDailyReport.addEventListener('click', () => {
+            if (!Array.isArray(dailyLogs) || dailyLogs.length === 0) {
+                showToast('Harap isi catatan harian terlebih dahulu!', 'error');
+                return;
+            }
+
+            try {
+                // Populate shop metadata
+                document.getElementById('print-daily-shop-name').textContent = document.getElementById('shop-name-display').textContent;
+                document.getElementById('print-daily-report-date').textContent = 'Tanggal Cetak: ' + new Date().toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                // Update logo
+                const logoPreviewImg = document.getElementById('settings-logo-preview-img');
+                const printLogoContainer = document.getElementById('print-daily-shop-logo');
+                if (logoPreviewImg && logoPreviewImg.style.display !== 'none' && logoPreviewImg.src) {
+                    printLogoContainer.innerHTML = `<img src="${logoPreviewImg.src}" style="width: 100%; height: 100%; object-fit: cover;">`;
+                } else {
+                    printLogoContainer.innerHTML = `<i class="fas fa-store" style="font-size: 24px; color: #333;"></i>`;
+                }
+
+                // Calculate Totals
+                let totalSpend = 0;
+                let totalGmv = 0;
+                let totalOrders = 0;
+                let totalNetProfit = 0;
+
+                const sortedLogs = [...dailyLogs].sort((a, b) => {
+                    const dateA = new Date(a.date);
+                    const dateB = new Date(b.date);
+                    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+                    return dateB - dateA; // reverse chronological for print table
+                });
+
+                const printDailyTableBody = document.getElementById('print-daily-table-body');
+                printDailyTableBody.innerHTML = '';
+
+                sortedLogs.forEach(log => {
+                    totalSpend += log.spend;
+                    totalGmv += log.gmv;
+                    totalOrders += log.orders;
+
+                    let productName = '-';
+                    let netProfit = log.gmv - log.spend;
+                    if (log.productId && Array.isArray(products)) {
+                        const prod = products.find(p => p.id === log.productId);
+                        if (prod) {
+                            productName = prod.name;
+                            netProfit = (log.orders * getProductNetMargin(prod)) - log.spend;
+                        }
+                    }
+                    totalNetProfit += netProfit;
+
+                    const d = new Date(log.date);
+                    const formattedDate = !isNaN(d.getTime()) ? d.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) : log.date;
+                    const roas = log.spend > 0 ? log.gmv / log.spend : 0;
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd;">${formattedDate}</td>
+                        <td style="padding: 6px; border-bottom: 1px solid #ddd;">${productName}</td>
+                        <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatRupiah(log.spend)}</td>
+                        <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${formatRupiah(log.gmv)}</td>
+                        <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd;">${log.orders} pcs</td>
+                        <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold;">${roas.toFixed(2)}x</td>
+                        <td style="padding: 6px; text-align: right; border-bottom: 1px solid #ddd; font-weight: bold; color: ${netProfit >= 0 ? '#008744' : '#d62d20'}">${formatRupiah(netProfit)}</td>
+                    `;
+                    printDailyTableBody.appendChild(tr);
+                });
+
+                const avgRoas = totalSpend > 0 ? totalGmv / totalSpend : 0;
+
+                document.getElementById('print-daily-total-spend').textContent = formatRupiah(totalSpend);
+                document.getElementById('print-daily-total-gmv').textContent = formatRupiah(totalGmv);
+                document.getElementById('print-daily-avg-roas').textContent = avgRoas.toFixed(2) + 'x';
+                
+                const printNetEl = document.getElementById('print-daily-net-profit');
+                printNetEl.textContent = formatRupiah(totalNetProfit);
+                printNetEl.style.color = totalNetProfit >= 0 ? '#008744' : '#d62d20';
+
+                // Set printing mode daily log
+                document.body.classList.add('print-mode-daily');
+                document.body.classList.remove('print-mode-dashboard');
+
+                showToast('Membuka dialog pencetakan laporan harian...', 'info');
+                setTimeout(() => {
+                    window.print();
+                    setTimeout(() => {
+                        document.body.classList.remove('print-mode-daily');
+                    }, 1000);
+                }, 500);
+
+            } catch (err) {
+                console.error('Error generating print daily report:', err);
+                showToast('Gagal cetak PDF: ' + err.message, 'error');
             }
         });
     }
