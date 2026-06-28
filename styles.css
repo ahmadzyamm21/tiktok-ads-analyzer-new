@@ -41,6 +41,7 @@ body {
     color: var(--text-primary);
     overflow-x: hidden;
     line-height: 1.5;
+    zoom: 0.75; /* Default zoom to 75% for optimal visibility */
 }
 
 a {
@@ -1196,6 +1197,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
     body {
         background-color: #FFFFFF !important;
         color: #000000 !important;
+        zoom: 1 !important; /* Ensure printing happens at normal 100% zoom */
     }
     
     #print-report-layout, #print-daily-layout {
