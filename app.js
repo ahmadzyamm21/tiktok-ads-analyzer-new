@@ -282,6 +282,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    const scaleInputSpend = document.getElementById('scale-input-spend');
+    const scaleInputDecay = document.getElementById('scale-input-decay');
+    if (scaleInputSpend) {
+        scaleInputSpend.addEventListener('input', updateScalingCalculator);
+    }
+    if (scaleInputDecay) {
+        scaleInputDecay.addEventListener('input', updateScalingCalculator);
+    }
+
     function updateSimulator() {
         const aov = simInputs.aov ? (parseFloat(simInputs.aov.value) || 0) : 0;
         const hpp = simInputs.hpp ? (parseFloat(simInputs.hpp.value) || 0) : 0;
@@ -407,6 +416,105 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Draw curves in Simulator Chart
         drawSimulatorCurves(naturalRoas, plannedSpend, margin, cpc, cvr, aov);
+        
+        // Update scaling calculator
+        updateScalingCalculator();
+    }
+
+    function updateScalingCalculator() {
+        const inputSpend = document.getElementById('scale-input-spend');
+        const inputDecay = document.getElementById('scale-input-decay');
+        const rangeValDecay = document.getElementById('range-val-scale-decay');
+        
+        const valGmv = document.getElementById('scale-val-gmv');
+        const valProfit = document.getElementById('scale-val-profit');
+        const valRoi = document.getElementById('scale-val-roi');
+        
+        const badge = document.getElementById('scale-verdict-badge');
+        const box = document.getElementById('scale-verdict-box');
+        const icon = document.getElementById('scale-verdict-icon');
+        const text = document.getElementById('scale-verdict-text');
+        
+        if (!inputSpend || !inputDecay) return;
+        
+        const targetSpend = parseFloat(inputSpend.value) || 0;
+        const decayPct = parseFloat(inputDecay.value) || 0;
+        
+        if (rangeValDecay) {
+            rangeValDecay.textContent = decayPct + '%';
+        }
+        
+        const aov = simInputs.aov ? (parseFloat(simInputs.aov.value) || 0) : 0;
+        const hpp = simInputs.hpp ? (parseFloat(simInputs.hpp.value) || 0) : 0;
+        let cpc = simInputs.cpc ? (parseFloat(simInputs.cpc.value) || 500) : 500;
+        let cvr = simInputs.cvr ? (parseFloat(simInputs.cvr.value) / 100 || 0.01) : 0.01;
+        
+        const isMegaSale = simInputs.megaSale ? simInputs.megaSale.checked : false;
+        if (isMegaSale) {
+            cvr = cvr * 1.8;
+            cpc = cpc * 1.3;
+        }
+
+        const originalRoas = (cvr * aov) / cpc;
+        const scaledRoas = Math.max(0.5, originalRoas * (1 - (decayPct / 100)));
+        const estimatedGmv = targetSpend * scaledRoas;
+        const estimatedOrders = aov > 0 ? (estimatedGmv / aov) : 0;
+        
+        let netMargin = aov - hpp;
+        const selectProductEl = document.getElementById('sim-select-product');
+        if (selectProductEl && selectProductEl.value && Array.isArray(products)) {
+            const prod = products.find(p => p.id === selectProductEl.value);
+            if (prod) {
+                netMargin = getProductNetMargin(prod);
+            }
+        }
+        
+        const estimatedProfit = (estimatedOrders * netMargin) - targetSpend;
+        const roi = targetSpend > 0 ? (estimatedProfit / targetSpend * 100) : 0;
+        
+        if (valGmv) valGmv.textContent = formatRupiah(estimatedGmv);
+        if (valProfit) {
+            valProfit.textContent = formatRupiah(estimatedProfit);
+            valProfit.style.color = estimatedProfit >= 0 ? 'var(--accent-green)' : 'var(--accent-pink)';
+        }
+        if (valRoi) {
+            valRoi.textContent = roi.toFixed(1) + '%';
+            valRoi.style.color = roi >= 0 ? 'var(--accent-green)' : 'var(--accent-pink)';
+        }
+        
+        if (estimatedProfit >= 0) {
+            if (badge) {
+                badge.textContent = 'Ready to Scale';
+                badge.className = 'badge badge-green';
+            }
+            if (box) {
+                box.style.background = 'rgba(0, 255, 135, 0.05)';
+                box.style.borderLeftColor = 'var(--accent-green)';
+            }
+            if (icon) {
+                icon.className = 'fas fa-check-circle';
+                icon.style.color = 'var(--accent-green)';
+            }
+            if (text) {
+                text.textContent = `Scaling direkomendasikan! Hasil estimasi profit bersih bernilai positif. ROI diproyeksikan sebesar ${roi.toFixed(1)}%.`;
+            }
+        } else {
+            if (badge) {
+                badge.textContent = 'High Risk';
+                badge.className = 'badge badge-pink';
+            }
+            if (box) {
+                box.style.background = 'rgba(254, 44, 85, 0.05)';
+                box.style.borderLeftColor = 'var(--accent-pink)';
+            }
+            if (icon) {
+                icon.className = 'fas fa-exclamation-triangle';
+                icon.style.color = 'var(--accent-pink)';
+            }
+            if (text) {
+                text.textContent = `Scaling berisiko tinggi! Estimasi rugi bersih sebesar ${formatRupiah(Math.abs(estimatedProfit))} karena penurunan ROAS. Coba kurangi budget baru atau naikkan AOV/harga jual.`;
+            }
+        }
     }
 
     function drawSimulatorCurves(naturalRoas, plannedSpend, margin, cpc, cvr, aov) {
@@ -2876,6 +2984,62 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const btnExportDailyCsv = document.getElementById('btn-export-daily-csv');
+    if (btnExportDailyCsv) {
+        btnExportDailyCsv.addEventListener('click', () => {
+            if (!Array.isArray(dailyLogs) || dailyLogs.length === 0) {
+                showToast('Tidak ada data catatan harian untuk diekspor.', 'error');
+                return;
+            }
+
+            try {
+                let csvContent = '\uFEFF'; // UTF-8 BOM
+                csvContent += '"Tanggal","Produk Terkait","Spend (Biaya)","GMV (Omset)","Orders","ROAS","Laba Bersih"\n';
+
+                const sortedLogs = [...dailyLogs].sort((a, b) => {
+                    const dateA = new Date(a.date);
+                    const dateB = new Date(b.date);
+                    if (isNaN(dateA.getTime()) || isNaN(dateB.getTime())) return 0;
+                    return dateA - dateB;
+                });
+
+                sortedLogs.forEach(log => {
+                    const d = new Date(log.date);
+                    const formattedDate = !isNaN(d.getTime()) ? d.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) : log.date;
+                    
+                    let productName = '-';
+                    let netProfit = log.gmv - log.spend;
+                    if (log.productId && Array.isArray(products)) {
+                        const prod = products.find(p => p.id === log.productId);
+                        if (prod) {
+                            productName = prod.name;
+                            netProfit = (log.orders * getProductNetMargin(prod)) - log.spend;
+                        }
+                    }
+
+                    const roas = log.spend > 0 ? (log.gmv / log.spend) : 0;
+                    const escapedProdName = productName.replace(/"/g, '""');
+
+                    csvContent += `"${formattedDate}","${escapedProdName}",${log.spend},${log.gmv},${log.orders},${roas.toFixed(2)},${netProfit}\n`;
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", url);
+                downloadAnchorNode.setAttribute("download", `riwayat_iklan_harian_${Date.now()}.csv`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                URL.revokeObjectURL(url);
+                showToast('Ekspor riwayat harian berhasil diunduh!', 'success');
+            } catch (err) {
+                console.error('Error exporting daily CSV:', err);
+                showToast('Gagal ekspor CSV: ' + err.message, 'error');
+            }
+        });
+    }
+
     // ==========================================
     // NOTIFICATION BELL & DIAGNOSTIC SYSTEM
     // ==========================================
@@ -2939,6 +3103,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         });
+
+        // Scan daily logs for negative profit (emergency margin alert)
+        if (Array.isArray(dailyLogs)) {
+            dailyLogs.forEach(log => {
+                let netProfit = log.gmv - log.spend;
+                if (log.productId && Array.isArray(products)) {
+                    const prod = products.find(p => p.id === log.productId);
+                    if (prod) {
+                        netProfit = (log.orders * getProductNetMargin(prod)) - log.spend;
+                    }
+                }
+
+                if (netProfit < 0) {
+                    const d = new Date(log.date);
+                    const formattedDate = !isNaN(d.getTime()) ? d.toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' }) : log.date;
+                    alerts.push({
+                        type: 'danger',
+                        text: `🚨 <strong>Rugi Harian!</strong> Pada tanggal ${formattedDate}, toko Anda boncos sebesar <strong>${formatRupiah(Math.abs(netProfit))}</strong>.`
+                    });
+                }
+            });
+        }
 
         if (alerts.length > 0) {
             notificationBadge.textContent = alerts.length;
