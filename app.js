@@ -2924,13 +2924,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     shopLogoBase64: localStorage.getItem('shop_logo_base64') || null
                 };
 
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dbBackup, null, 2));
+                const jsonStr = JSON.stringify(dbBackup, null, 2);
+                const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
                 const downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("href", url);
                 downloadAnchorNode.setAttribute("download", `cadangan_toko_lengkap_${Date.now()}.json`);
                 document.body.appendChild(downloadAnchorNode);
                 downloadAnchorNode.click();
                 downloadAnchorNode.remove();
+                URL.revokeObjectURL(url);
                 
                 showToast('Cadangan data toko berhasil diunduh!', 'success');
             } catch (err) {
