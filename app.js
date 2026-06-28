@@ -2879,35 +2879,39 @@ document.addEventListener('DOMContentLoaded', () => {
     // ==========================================
     // NOTIFICATION BELL & DIAGNOSTIC SYSTEM
     // ==========================================
-    const btnNotifications = document.getElementById('btn-notifications');
-    const notificationPanel = document.getElementById('notification-panel');
-    const notificationClose = document.getElementById('notification-close');
-    const notificationBadge = document.getElementById('notification-badge');
-    const notificationList = document.getElementById('notification-list');
-
-    if (btnNotifications && notificationPanel) {
-        btnNotifications.addEventListener('click', (e) => {
+    if (document.getElementById('btn-notifications') && document.getElementById('notification-panel')) {
+        document.getElementById('btn-notifications').addEventListener('click', (e) => {
             e.stopPropagation();
-            notificationPanel.style.display = notificationPanel.style.display === 'none' ? 'block' : 'none';
+            const panel = document.getElementById('notification-panel');
+            if (panel) {
+                panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+            }
         });
     }
 
-    if (notificationClose && notificationPanel) {
-        notificationClose.addEventListener('click', () => {
-            notificationPanel.style.display = 'none';
+    if (document.getElementById('notification-close') && document.getElementById('notification-panel')) {
+        document.getElementById('notification-close').addEventListener('click', () => {
+            const panel = document.getElementById('notification-panel');
+            if (panel) {
+                panel.style.display = 'none';
+            }
         });
     }
 
     // Close panel when clicking outside
     document.addEventListener('click', (e) => {
-        if (notificationPanel && notificationPanel.style.display === 'block') {
-            if (!notificationPanel.contains(e.target) && e.target !== btnNotifications && !btnNotifications.contains(e.target)) {
-                notificationPanel.style.display = 'none';
+        const panel = document.getElementById('notification-panel');
+        const btn = document.getElementById('btn-notifications');
+        if (panel && panel.style.display === 'block') {
+            if (!panel.contains(e.target) && e.target !== btn && (btn && !btn.contains(e.target))) {
+                panel.style.display = 'none';
             }
         }
     });
 
     function updateNotifications() {
+        const notificationBadge = document.getElementById('notification-badge');
+        const notificationList = document.getElementById('notification-list');
         if (!notificationBadge || !notificationList) return;
 
         const alerts = [];
