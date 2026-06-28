@@ -534,6 +534,34 @@
                                 </table>
                             </div>
                         </div>
+
+                        <!-- Product Leaderboard Card -->
+                        <div class="card mt-4" style="border: 1px solid rgba(0, 255, 135, 0.15); background: linear-gradient(145deg, rgba(20, 24, 33, 0.4) 0%, rgba(10, 12, 18, 0.7) 100%);">
+                            <h3 style="margin: 0 0 15px 0; color: #FFF; font-size: 15px;">
+                                <i class="fas fa-trophy text-green mr-2"></i>Papan Peringkat Keuntungan Produk
+                            </h3>
+                            <p class="section-desc">Peringkat produk berdasarkan efisiensi BE ROAS (kemudahan profit) dan kontribusi laba bersih aktual yang disumbangkan dari data harian & kampanye.</p>
+                            
+                            <div class="table-responsive">
+                                <table class="premium-table" id="leaderboard-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 8%;">Rank</th>
+                                            <th>Nama Produk</th>
+                                            <th style="text-align: right;">Margin per Unit</th>
+                                            <th style="text-align: right;">BE ROAS</th>
+                                            <th style="text-align: right;">Kontribusi Profit Iklan</th>
+                                            <th>Rekomendasi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="leaderboard-table-body">
+                                        <tr>
+                                            <td colspan="6" class="text-center text-gray" style="padding: 15px;">Belum ada data produk terdaftar.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1209,6 +1237,19 @@
                     </button>
                     <input type="file" id="settings-shop-logo-file" accept="image/*" style="display: none;">
                 </div>
+            </div>
+            
+            <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+            <h4 style="margin: 0 0 8px 0; color: #FFF; font-size: 13px; text-transform: uppercase; font-weight: 600; color: var(--text-muted);">Pusat Cadangan Data Toko</h4>
+            <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 12px;">Ekspor seluruh database aplikasi ke file cadangan, atau pulihkan dari file sebelumnya.</p>
+            <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                <button type="button" class="btn btn-secondary btn-sm" id="btn-export-full-backup" style="flex: 1; font-size: 11px; padding: 8px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;">
+                    <i class="fas fa-file-download"></i> Cadangkan Semua
+                </button>
+                <label class="btn btn-secondary btn-sm" for="input-full-backup-file" style="flex: 1; font-size: 11px; padding: 8px 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; margin: 0; font-weight: normal;">
+                    <i class="fas fa-file-upload"></i> Pulihkan Data
+                </label>
+                <input type="file" id="input-full-backup-file" accept=".json" style="display: none;">
             </div>
             
             <div style="display: flex; gap: 10px; margin-top: 24px; justify-content: flex-end;">

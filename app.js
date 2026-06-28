@@ -1029,6 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
         calculateDashboardMetrics();
         generateRecommendations();
         updateNotifications();
+        updateProductLeaderboard();
     }
 
     function deleteCampaign(id) {
@@ -2432,6 +2433,92 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Show summary of last product by default
         showProductBreakdown(products[products.length - 1]);
+        updateProductLeaderboard();
+    }
+
+    function updateProductLeaderboard() {
+        try {
+            const tableBody = document.getElementById('leaderboard-table-body');
+            if (!tableBody) return;
+
+            if (!Array.isArray(products) || products.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center text-gray" style="padding: 15px;">Belum ada data produk terdaftar.</td>
+                    </tr>
+                `;
+                return;
+            }
+
+            const leaderboardData = products.map(prod => {
+                let totalProfitContribution = 0;
+
+                if (Array.isArray(campaigns)) {
+                    campaigns.forEach(c => {
+                        if (c.productId === prod.id) {
+                            const profit = (c.orders * getProductNetMargin(prod)) - c.spend;
+                            totalProfitContribution += profit;
+                        }
+                    });
+                }
+
+                if (Array.isArray(dailyLogs)) {
+                    dailyLogs.forEach(log => {
+                        if (log.productId === prod.id) {
+                            const profit = (log.orders * getProductNetMargin(prod)) - log.spend;
+                            totalProfitContribution += profit;
+                        }
+                    });
+                }
+
+                return {
+                    product: prod,
+                    netMargin: getProductNetMargin(prod),
+                    beRoas: prod.beRoas,
+                    totalProfit: totalProfitContribution
+                };
+            });
+
+            leaderboardData.sort((a, b) => {
+                if (b.totalProfit !== a.totalProfit) {
+                    return b.totalProfit - a.totalProfit;
+                }
+                return b.netMargin - a.netMargin;
+            });
+
+            tableBody.innerHTML = '';
+
+            leaderboardData.forEach((item, index) => {
+                const tr = document.createElement('tr');
+                const rank = index + 1;
+                const p = item.product;
+                
+                let recBadge = '<span class="badge badge-cyan">Netral</span>';
+                if (item.totalProfit > 5000000) {
+                    recBadge = '<span class="badge badge-green" style="background: rgba(0, 255, 135, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green);">🔥 Top Winner (Scale Up!)</span>';
+                } else if (item.totalProfit > 0 && item.beRoas < 2.0) {
+                    recBadge = '<span class="badge badge-cyan" style="background: rgba(37, 244, 238, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan);">🚀 Sangat Potensial</span>';
+                } else if (item.totalProfit < 0) {
+                    recBadge = '<span class="badge badge-pink" style="background: rgba(254, 44, 85, 0.15); color: var(--accent-pink); border: 1px solid var(--accent-pink);">⚠️ Perlu Efisiensi</span>';
+                } else if (item.netMargin < 15000) {
+                    recBadge = '<span class="badge badge-warning" style="background: rgba(255, 170, 0, 0.15); color: #FFAA00; border: 1px solid #FFAA00;">💸 Margin Tipis</span>';
+                }
+
+                const profitColor = item.totalProfit >= 0 ? 'var(--accent-green)' : 'var(--accent-pink)';
+
+                tr.innerHTML = `
+                    <td><strong>#${rank}</strong></td>
+                    <td><strong>${p.name}</strong></td>
+                    <td style="text-align: right; font-weight: 600;">${formatRupiah(item.netMargin)} (${p.marginPct.toFixed(1)}%)</td>
+                    <td style="text-align: right; font-weight: 600;">${item.beRoas === Infinity ? 'Infinite' : item.beRoas.toFixed(2) + 'x'}</td>
+                    <td style="text-align: right; font-weight: bold; color: ${profitColor};">${formatRupiah(item.totalProfit)}</td>
+                    <td>${recBadge}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        } catch (err) {
+            console.error('Error updating product leaderboard:', err);
+        }
     }
 
     // ==========================================
@@ -2817,6 +2904,84 @@ document.addEventListener('DOMContentLoaded', () => {
             loadShopSettings();
             closeSettingsModal();
             showToast('Profil toko berhasil diperbarui!', 'success');
+        });
+    }
+
+    // ==========================================
+    // ALL-IN-ONE DATABASE BACKUP & RESTORE
+    // ==========================================
+    const btnExportFullBackup = document.getElementById('btn-export-full-backup');
+    const inputFullBackupFile = document.getElementById('input-full-backup-file');
+
+    if (btnExportFullBackup) {
+        btnExportFullBackup.addEventListener('click', () => {
+            try {
+                const dbBackup = {
+                    campaigns: campaigns,
+                    products: products,
+                    dailyLogs: dailyLogs,
+                    shopName: localStorage.getItem('shop_name') || 'My TikTok Shop',
+                    shopLogoBase64: localStorage.getItem('shop_logo_base64') || null
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dbBackup, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", `cadangan_toko_lengkap_${Date.now()}.json`);
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+                
+                showToast('Cadangan data toko berhasil diunduh!', 'success');
+            } catch (err) {
+                console.error('Error exporting database backup:', err);
+                showToast('Gagal mencadangkan data: ' + err.message, 'error');
+            }
+        });
+    }
+
+    if (inputFullBackupFile) {
+        inputFullBackupFile.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const importedData = JSON.parse(evt.target.result);
+                    if (!importedData || typeof importedData !== 'object') {
+                        showToast('Format file cadangan tidak valid!', 'error');
+                        return;
+                    }
+
+                    if (Array.isArray(importedData.campaigns)) {
+                        localStorage.setItem('tiktok_campaigns', JSON.stringify(importedData.campaigns));
+                    }
+                    if (Array.isArray(importedData.products)) {
+                        localStorage.setItem('tiktok_products', JSON.stringify(importedData.products));
+                    }
+                    if (Array.isArray(importedData.dailyLogs)) {
+                        localStorage.setItem('tiktok_daily_logs', JSON.stringify(importedData.dailyLogs));
+                    }
+                    if (importedData.shopName) {
+                        localStorage.setItem('shop_name', importedData.shopName);
+                    }
+                    if (importedData.shopLogoBase64) {
+                        localStorage.setItem('shop_logo_base64', importedData.shopLogoBase64);
+                    } else {
+                        localStorage.removeItem('shop_logo_base64');
+                    }
+
+                    showToast('Seluruh data toko berhasil dipulihkan! Memuat ulang...', 'success');
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } catch (err) {
+                    console.error('Error restoring database backup:', err);
+                    showToast('Gagal memulihkan data: ' + err.message, 'error');
+                }
+            };
+            reader.readAsText(file);
         });
     }
 
@@ -3518,4 +3683,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateDailyProductDropdown();
     renderDailyLogs();
     updateNotifications();
+    updateProductLeaderboard();
 });
