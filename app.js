@@ -106,8 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Tab Navigation logic
     navItems.forEach(item => {
         item.addEventListener('click', (e) => {
-            e.preventDefault();
             const tabId = item.getAttribute('data-tab');
+            if (!tabId) return;
+            e.preventDefault();
             
             // Set active class in menu
             navItems.forEach(nav => nav.classList.remove('active'));
