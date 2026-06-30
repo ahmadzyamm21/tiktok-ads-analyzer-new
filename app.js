@@ -11,6 +11,47 @@ document.addEventListener('DOMContentLoaded', () => {
     let dailyLogs = [];
     let charts = {};
 
+    // ------------------------------------------
+    // Theme Switcher Logic
+    // ------------------------------------------
+    const btnToggleTheme = document.getElementById('btn-toggle-theme');
+    const themeIcon = document.getElementById('theme-icon');
+
+    // Load saved theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        document.body.classList.add('light-theme');
+        if (themeIcon) {
+            themeIcon.classList.remove('fa-sun');
+            themeIcon.classList.add('fa-moon');
+        }
+    }
+
+    if (btnToggleTheme) {
+        btnToggleTheme.addEventListener('click', () => {
+            const isLight = document.body.classList.toggle('light-theme');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+            
+            if (themeIcon) {
+                if (isLight) {
+                    themeIcon.classList.remove('fa-sun');
+                    themeIcon.classList.add('fa-moon');
+                } else {
+                    themeIcon.classList.remove('fa-moon');
+                    themeIcon.classList.add('fa-sun');
+                }
+            }
+            
+            // Redraw charts
+            if (typeof updateDashboardCharts === 'function') {
+                try { updateDashboardCharts(); } catch(e) {}
+            }
+            if (typeof updateDailyChart === 'function') {
+                try { updateDailyChart(); } catch(e) {}
+            }
+        });
+    }
+
     try {
         campaigns = JSON.parse(localStorage.getItem('tiktok_campaigns')) || [];
     } catch(e) {
