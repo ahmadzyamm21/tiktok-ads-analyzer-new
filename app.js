@@ -1021,28 +1021,30 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (header.includes('name') || header.includes('kampanye') || header.includes('campaign') || header.includes('nama') || header.includes('nama_kampanye') || header.includes('campaign_name')) {
                     nameIdx = idx;
-                } else if (header.includes('spend') || header.includes('cost') || header.includes('biaya') || header.includes('jumlah yang dibelanjakan') || header.includes('anggaran yang digunakan') || header.includes('dibelanjakan') || header.includes('jumlah harian') || header.includes('amount_spent') || header.includes('total_cost')) {
+                } else if ((header.includes('spend') || header.includes('cost') || header.includes('biaya') || header.includes('jumlah yang dibelanjakan') || header.includes('anggaran yang digunakan') || header.includes('dibelanjakan') || header.includes('jumlah harian') || header.includes('amount_spent') || header.includes('total_cost')) && !header.includes('per') && !header.includes('cpc') && !header.includes('cpa') && !header.includes('cpm')) {
                     spendIdx = idx;
-                } else if (header.includes('impress') || header.includes('tampil') || header.includes('penayangan') || header.includes('tayangan') || header.includes('views') || header.includes('impression') || header.includes('impressions') || header.includes('tayangan_iklan')) {
+                } else if ((header.includes('impress') || header.includes('tampil') || header.includes('penayangan') || header.includes('tayangan') || header.includes('views') || header.includes('impression') || header.includes('impressions') || header.includes('tayangan_iklan')) && !header.includes('per') && !header.includes('rate') && !header.includes('ctr')) {
                     impIdx = idx;
-                } else if (header.includes('click') || header.includes('klik') || header.includes('clicks') || header.includes('jumlah_klik') || header.includes('klik_iklan')) {
+                } else if ((header.includes('click') || header.includes('klik') || header.includes('clicks') || header.includes('jumlah_klik') || header.includes('klik_iklan')) && !header.includes('per') && !header.includes('rate') && !header.includes('ctr') && !header.includes('cpc')) {
                     clickIdx = idx;
-                } else if (header.includes('conv') || header.includes('order') || header.includes('purchase') || (header.includes('konversi') && !header.includes('nilai')) || header.includes('payment') || header.includes('penjualan unit') || header.includes('pembayaran lengkap') || header.includes('jumlah konversi') || header.includes('pesanan') || header.includes('hasil') || header.includes('conversions') || header.includes('conversion') || header.includes('complete_payment') || header.includes('orders')) {
+                } else if ((header.includes('conv') || header.includes('order') || header.includes('purchase') || (header.includes('konversi') && !header.includes('nilai')) || header.includes('payment') || header.includes('penjualan unit') || header.includes('pembayaran lengkap') || header.includes('jumlah konversi') || header.includes('pesanan') || header.includes('hasil') || header.includes('conversions') || header.includes('conversion') || header.includes('complete_payment') || header.includes('orders')) && !header.includes('nilai') && !header.includes('rate') && !header.includes('cvr') && !header.includes('per')) {
                     convIdx = idx;
-                } else if (header.includes('gmv') || header.includes('rev') || header.includes('value') || header.includes('nilai penjualan') || header.includes('nilai konversi') || header.includes('omset') || header.includes('omzet') || header.includes('revenue') || header.includes('pendapatan') || header.includes('total_value') || header.includes('conversion_value') || header.includes('nilai_konversi')) {
+                } else if ((header.includes('gmv') || header.includes('rev') || header.includes('value') || header.includes('nilai penjualan') || header.includes('nilai konversi') || header.includes('omset') || header.includes('omzet') || header.includes('revenue') || header.includes('pendapatan') || header.includes('total_value') || header.includes('conversion_value') || header.includes('nilai_konversi')) && !header.includes('per') && !header.includes('roas') && !header.includes('roi')) {
                     gmvIdx = idx;
                 } else if (header.includes('target') || header.includes('roas target') || header.includes('target roas') || header.includes('target_roas')) {
                     targetIdx = idx;
                 }
             });
 
-            // Fallback checking in case header auto-detect failed
-            if (nameIdx === -1) nameIdx = 0;
-            if (spendIdx === -1) spendIdx = 1;
-            if (impIdx === -1) impIdx = 2;
-            if (clickIdx === -1) clickIdx = 3;
-            if (convIdx === -1) convIdx = 4;
-            if (gmvIdx === -1) gmvIdx = 5;
+            // Fallback checking ONLY if header auto-detect failed completely
+            if (headerIdx === -1) {
+                if (nameIdx === -1) nameIdx = 0;
+                if (spendIdx === -1) spendIdx = 1;
+                if (impIdx === -1) impIdx = 2;
+                if (clickIdx === -1) clickIdx = 3;
+                if (convIdx === -1) convIdx = 4;
+                if (gmvIdx === -1) gmvIdx = 5;
+            }
             
             let parsedCount = 0;
             const newCampaigns = [];
@@ -1101,11 +1103,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     return parseFloat(clean) || 0;
                 };
 
-                const spend = parseNum(cols[spendIdx]);
-                const impressions = parseNum(cols[impIdx]);
-                const clicks = parseNum(cols[clickIdx]);
-                const orders = parseNum(cols[convIdx]);
-                const gmv = parseNum(cols[gmvIdx]);
+                const spend = spendIdx !== -1 ? parseNum(cols[spendIdx]) : 0;
+                const orders = convIdx !== -1 ? parseNum(cols[convIdx]) : 0;
+                const gmv = gmvIdx !== -1 ? parseNum(cols[gmvIdx]) : 0;
+                const clicks = clickIdx !== -1 ? parseNum(cols[clickIdx]) : Math.round(orders * 15);
+                const impressions = impIdx !== -1 ? parseNum(cols[impIdx]) : Math.round(clicks * 80);
                 
                 // TikTok Shop Max ROAS target fallback
                 let targetRoas = targetIdx !== -1 ? parseNum(cols[targetIdx]) : 0;
