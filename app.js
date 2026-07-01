@@ -3809,6 +3809,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function parseAndLoadDailyCsv(csvText) {
         try {
+            const productSelect = document.getElementById('daily-product');
+            const selectedProductId = productSelect ? productSelect.value : '';
+
             const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
             if (lines.length < 2) {
                 showToast('Format CSV tidak valid atau kosong!', 'error');
@@ -3958,7 +3961,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const logData = {
                     id: existingIdx !== -1 ? dailyLogs[existingIdx].id : 'daily_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
                     date: formattedDate,
-                    productId: '', 
+                    productId: selectedProductId, 
                     spend,
                     gmv,
                     orders
