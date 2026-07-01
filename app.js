@@ -3219,24 +3219,34 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    function performFullDatabaseReset() {
+        if (confirm('Apakah Anda yakin ingin menghapus seluruh data aplikasi secara permanen?\nTindakan ini akan menghapus data kampanye, produk HPP, catatan harian, dan setelan profil toko Anda.')) {
+            if (confirm('TINDAKAN INI TIDAK BISA DIBATALKAN.\nApakah Anda benar-benar yakin?')) {
+                // Clear all related localStorage items
+                localStorage.removeItem('tiktok_campaigns');
+                localStorage.removeItem('tiktok_products');
+                localStorage.removeItem('tiktok_daily_logs');
+                localStorage.removeItem('shop_name');
+                localStorage.removeItem('shop_logo_base64');
+                
+                showToast('Semua database berhasil dibersihkan! Memuat ulang...', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            }
+        }
+    }
+
     const btnResetAllData = document.getElementById('btn-reset-all-data');
     if (btnResetAllData) {
-        btnResetAllData.addEventListener('click', () => {
-            if (confirm('Apakah Anda yakin ingin menghapus seluruh data aplikasi secara permanen?\nTindakan ini akan menghapus data kampanye, produk HPP, catatan harian, dan setelan profil toko Anda.')) {
-                if (confirm('TINDAKAN INI TIDAK BISA DIBATALKAN.\nApakah Anda benar-benar yakin?')) {
-                    // Clear all related localStorage items
-                    localStorage.removeItem('tiktok_campaigns');
-                    localStorage.removeItem('tiktok_products');
-                    localStorage.removeItem('tiktok_daily_logs');
-                    localStorage.removeItem('shop_name');
-                    localStorage.removeItem('shop_logo_base64');
-                    
-                    showToast('Semua database berhasil dibersihkan! Memuat ulang...', 'success');
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                }
-            }
+        btnResetAllData.addEventListener('click', performFullDatabaseReset);
+    }
+
+    const btnSidebarResetAll = document.getElementById('btn-sidebar-reset-all');
+    if (btnSidebarResetAll) {
+        btnSidebarResetAll.addEventListener('click', (e) => {
+            e.preventDefault();
+            performFullDatabaseReset();
         });
     }
 
