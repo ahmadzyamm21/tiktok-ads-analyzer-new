@@ -3738,6 +3738,255 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ==========================================
+    // DAILY AD PERFORMANCE EXCEL/CSV IMPORTER
+    // ==========================================
+    const dailyCsvDropzone = document.getElementById('daily-csv-dropzone');
+    const dailyCsvFileInput = document.getElementById('daily-csv-file-input');
+
+    if (dailyCsvDropzone && dailyCsvFileInput) {
+        dailyCsvDropzone.addEventListener('click', () => dailyCsvFileInput.click());
+
+        dailyCsvDropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dailyCsvDropzone.classList.add('dragover');
+        });
+
+        dailyCsvDropzone.addEventListener('dragleave', () => {
+            dailyCsvDropzone.classList.remove('dragover');
+        });
+
+        dailyCsvDropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dailyCsvDropzone.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleDailyCsvFile(files[0]);
+            }
+        });
+
+        dailyCsvFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleDailyCsvFile(e.target.files[0]);
+            }
+        });
+    }
+
+    function handleDailyCsvFile(file) {
+        const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+        const isCsv = file.name.endsWith('.csv');
+
+        if (!isExcel && !isCsv) {
+            showToast('Format file tidak didukung! Gunakan Excel (.xlsx, .xls) atau CSV.', 'error');
+            return;
+        }
+
+        const reader = new FileReader();
+
+        if (isExcel) {
+            showToast('Memproses file Excel Harian...', 'info');
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const csvText = XLSX.utils.sheet_to_csv(worksheet);
+                    parseAndLoadDailyCsv(csvText);
+                } catch (err) {
+                    console.error(err);
+                    showToast('Gagal memproses file Excel!', 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            reader.onload = function(e) {
+                parseAndLoadDailyCsv(e.target.result);
+            };
+            reader.readAsText(file, 'UTF-8');
+        }
+    }
+
+    function parseAndLoadDailyCsv(csvText) {
+        try {
+            const lines = csvText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+            if (lines.length < 2) {
+                showToast('Format CSV tidak valid atau kosong!', 'error');
+                return;
+            }
+
+            // Auto-detect delimiter
+            let delimiter = ',';
+            const firstLine = lines[0];
+            const commaCount = (firstLine.match(/,/g) || []).length;
+            const semicolonCount = (firstLine.match(/;/g) || []).length;
+            const tabCount = (firstLine.match(/\t/g) || []).length;
+            
+            if (semicolonCount > commaCount && semicolonCount > tabCount) {
+                delimiter = ';';
+            } else if (tabCount > commaCount && tabCount > semicolonCount) {
+                delimiter = '\t';
+            }
+
+            // Simple CSV line parser
+            function parseCSVLine(line) {
+                const result = [];
+                let current = '';
+                let inQuotes = false;
+                for (let i = 0; i < line.length; i++) {
+                    const char = line[i];
+                    if (char === '"') {
+                        inQuotes = !inQuotes;
+                    } else if (char === delimiter && !inQuotes) {
+                        result.push(current.trim());
+                        current = '';
+                    } else {
+                        current += char;
+                    }
+                }
+                result.push(current.trim());
+                return result;
+            }
+
+            // Scan first few lines to find header
+            let headerIdx = -1;
+            let rawHeaders = [];
+            for (let i = 0; i < Math.min(lines.length, 10); i++) {
+                const cols = parseCSVLine(lines[i]);
+                let matchCount = 0;
+                cols.forEach(col => {
+                    const c = col.toLowerCase();
+                    if (c.includes('hari') || c.includes('tanggal') || c.includes('date') || c.includes('day') ||
+                        c.includes('biaya') || c.includes('spend') || c.includes('cost') ||
+                        c.includes('pesanan') || c.includes('orders') || c.includes('bruto') || c.includes('gmv') || c.includes('revenue')) {
+                        matchCount++;
+                    }
+                });
+                if (matchCount >= 2) {
+                    headerIdx = i;
+                    rawHeaders = cols;
+                    break;
+                }
+            }
+
+            if (headerIdx === -1) {
+                headerIdx = 0;
+                rawHeaders = parseCSVLine(lines[0]);
+            }
+
+            let dateIdx = -1;
+            let spendIdx = -1;
+            let gmvIdx = -1;
+            let ordersIdx = -1;
+
+            rawHeaders.forEach((h, idx) => {
+                const header = h.toLowerCase().replace(/[^a-z0-9\s_]/g, '').trim();
+                
+                if (header.includes('hari') || header.includes('tanggal') || header.includes('date') || header.includes('day') || header.includes('time') || header.includes('waktu')) {
+                    dateIdx = idx;
+                } else if ((header.includes('spend') || header.includes('cost') || header.includes('biaya') || header.includes('dibelanjakan') || header.includes('amount_spent')) && !header.includes('per') && !header.includes('cpc') && !header.includes('cpa') && !header.includes('cpm')) {
+                    spendIdx = idx;
+                } else if ((header.includes('gmv') || header.includes('rev') || header.includes('value') || header.includes('bruto') || header.includes('omset') || header.includes('omzet') || header.includes('revenue') || header.includes('pendapatan')) && !header.includes('per') && !header.includes('roas') && !header.includes('roi')) {
+                    gmvIdx = idx;
+                } else if ((header.includes('orders') || header.includes('order') || header.includes('conv') || header.includes('pesanan') || header.includes('pcs') || header.includes('konversi')) && !header.includes('per') && !header.includes('rate') && !header.includes('cvr') && !header.includes('nilai')) {
+                    ordersIdx = idx;
+                }
+            });
+
+            // If some crucial headers are missing, try default mapping
+            if (dateIdx === -1) dateIdx = 0;
+            if (spendIdx === -1) spendIdx = 1;
+            if (ordersIdx === -1) ordersIdx = 2;
+            if (gmvIdx === -1) gmvIdx = 4;
+
+            const parseNum = (str) => {
+                if (!str) return 0;
+                let clean = str.toString().trim();
+                clean = clean.replace(/[Rp$\s]/g, '');
+                if (clean.includes('.') && clean.includes(',')) {
+                    const lastDot = clean.lastIndexOf('.');
+                    const lastComma = clean.lastIndexOf(',');
+                    if (lastDot > lastComma) {
+                        clean = clean.replace(/,/g, '');
+                    } else {
+                        clean = clean.replace(/\./g, '').replace(/,/g, '.');
+                    }
+                } else if (clean.includes('.') && !clean.includes(',')) {
+                    const parts = clean.split('.');
+                    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
+                        clean = clean.replace(/\./g, '');
+                    }
+                } else if (clean.includes(',') && !clean.includes('.')) {
+                    const parts = clean.split(',');
+                    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3)) {
+                        clean = clean.replace(/,/g, '');
+                    } else {
+                        clean = clean.replace(/,/g, '.');
+                    }
+                }
+                clean = clean.replace(/[^0-9.-]/g, '');
+                return parseFloat(clean) || 0;
+            };
+
+            let importCount = 0;
+            for (let i = headerIdx + 1; i < lines.length; i++) {
+                const cols = parseCSVLine(lines[i]);
+                if (cols.length < 2) continue;
+
+                // Parse and clean date
+                let rawDate = cols[dateIdx] || '';
+                if (!rawDate) continue;
+                rawDate = rawDate.split(' ')[0].trim();
+                
+                let formattedDate = rawDate;
+                const d = new Date(rawDate);
+                if (!isNaN(d.getTime())) {
+                    const year = d.getFullYear();
+                    const month = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    formattedDate = `${year}-${month}-${day}`;
+                } else {
+                    continue;
+                }
+
+                const spend = spendIdx !== -1 ? parseNum(cols[spendIdx]) : 0;
+                const gmv = gmvIdx !== -1 ? parseNum(cols[gmvIdx]) : 0;
+                const orders = ordersIdx !== -1 ? parseNum(cols[ordersIdx]) : 0;
+
+                // Check if date already exists
+                const existingIdx = dailyLogs.findIndex(log => log.date === formattedDate);
+                const logData = {
+                    id: existingIdx !== -1 ? dailyLogs[existingIdx].id : 'daily_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+                    date: formattedDate,
+                    productId: '', 
+                    spend,
+                    gmv,
+                    orders
+                };
+
+                if (existingIdx !== -1) {
+                    dailyLogs[existingIdx] = logData;
+                } else {
+                    dailyLogs.push(logData);
+                }
+                importCount++;
+            }
+
+            if (importCount > 0) {
+                dailyLogs.sort((a, b) => new Date(a.date) - new Date(b.date));
+                saveDailyLogsToStorage();
+                renderDailyLogs();
+                updateDailyChart();
+                showToast(`Berhasil mengimpor ${importCount} catatan harian!`, 'success');
+            } else {
+                showToast('Tidak ada data harian valid yang diimpor!', 'error');
+            }
+        } catch (err) {
+            console.error('Error parsing daily CSV:', err);
+            showToast('Gagal memproses data harian: ' + err.message, 'error');
+        }
+    }
+
     const btnExportDailyCsv = document.getElementById('btn-export-daily-csv');
     if (btnExportDailyCsv) {
         btnExportDailyCsv.addEventListener('click', () => {
