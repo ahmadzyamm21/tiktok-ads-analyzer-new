@@ -603,6 +603,7 @@ a {
 .badge-green { background-color: rgba(0, 255, 135, 0.1); color: var(--accent-green); border: 1px solid rgba(0, 255, 135, 0.2); }
 .badge-yellow { background-color: rgba(255, 210, 20, 0.1); color: var(--accent-yellow); border: 1px solid rgba(255, 210, 20, 0.2); }
 .badge-gray { background-color: rgba(255, 255, 255, 0.05); color: var(--text-secondary); border: 1px solid var(--border-color); }
+.badge-purple { background-color: rgba(178, 89, 255, 0.1); color: var(--accent-purple); border: 1px solid rgba(178, 89, 255, 0.2); }
 
 /* TAB 2: SIMULATOR LAYOUT */
 .simulator-layout {

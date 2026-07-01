@@ -522,6 +522,151 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function updatePortfolioAllocator() {
+        const allocatorTotalBudget = document.getElementById('allocator-total-budget');
+        const allocatorMinSpend = document.getElementById('allocator-min-spend');
+        const allocatorTableBody = document.getElementById('allocator-table-body');
+        const allocatorSummaryText = document.getElementById('allocator-summary-text');
+
+        if (!allocatorTotalBudget || !allocatorTableBody) return;
+
+        if (campaigns.length === 0) {
+            allocatorTableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 20px 0;">
+                        Tidak ada data kampanye aktif. Silakan load demo data atau unggah CSV.
+                    </td>
+                </tr>
+            `;
+            if (allocatorSummaryText) {
+                allocatorSummaryText.textContent = "Muat data kampanye untuk mulai menggunakan Alokator Anggaran Portofolio.";
+            }
+            return;
+        }
+
+        const totalBudget = parseFloat(allocatorTotalBudget.value) || 2000000;
+        const minSpend = parseFloat(allocatorMinSpend.value) || 150000;
+
+        // Calculate break-even roas for each campaign
+        const campaignAllocations = campaigns.map(c => {
+            const roas = c.spend > 0 ? c.gmv / c.spend : 0;
+            let beRoas = c.targetRoas;
+            if (c.productId) {
+                const prod = products.find(p => p.id === c.productId);
+                if (prod) beRoas = prod.beRoas;
+            }
+            return {
+                id: c.id,
+                name: c.name,
+                roas: roas,
+                beRoas: beRoas,
+                status: determineStatus(c),
+                // Weight is based on ROAS relative to Break-even. 
+                ratio: beRoas > 0 ? roas / beRoas : 1.0
+            };
+        });
+
+        // Sum of all ratios
+        campaignAllocations.forEach(c => {
+            if (c.ratio < 0.1) c.ratio = 0.1;
+            // Boost scaling zone campaigns
+            if (c.status === 'Scaling Zone') {
+                c.ratio *= 1.5;
+            }
+            // Penalty for critical campaigns
+            if (c.status === 'Critical (Rugi)') {
+                c.ratio *= 0.5;
+            }
+        });
+
+        const totalRatio = campaignAllocations.reduce((sum, c) => sum + c.ratio, 0);
+
+        // First pass: Proportional allocation
+        campaignAllocations.forEach(c => {
+            c.proportionalShare = (c.ratio / (totalRatio || 1)) * totalBudget;
+        });
+
+        // Second pass: Enforce minimum campaign budget (e.g. Rp 150,000) for active ones
+        let remainingBudget = totalBudget;
+        let unconstrainedCount = 0;
+        let sumUnconstrainedRatios = 0;
+
+        campaignAllocations.forEach(c => {
+            c.allocated = 0;
+            c.isConstrained = false;
+            if (c.proportionalShare < minSpend) {
+                c.allocated = minSpend;
+                c.isConstrained = true;
+                remainingBudget -= minSpend;
+            } else {
+                unconstrainedCount++;
+                sumUnconstrainedRatios += c.ratio;
+            }
+        });
+
+        // Reallocate remaining budget to unconstrained campaigns
+        if (unconstrainedCount > 0 && remainingBudget > 0) {
+            campaignAllocations.forEach(c => {
+                if (!c.isConstrained) {
+                    c.allocated = (c.ratio / sumUnconstrainedRatios) * remainingBudget;
+                }
+            });
+        } else if (remainingBudget < 0) {
+            // Total budget is too small to cover minSpend for all campaigns. Allocate flat rate.
+            const flat = totalBudget / campaignAllocations.length;
+            campaignAllocations.forEach(c => {
+                c.allocated = flat;
+            });
+        }
+
+        // Render table
+        let tableRows = '';
+        let countScale = 0;
+        let countPause = 0;
+
+        campaignAllocations.forEach(c => {
+            const allocPct = (c.allocated / totalBudget) * 100;
+            
+            let actionHtml = '';
+            if (c.status === 'Scaling Zone') {
+                actionHtml = '<span style="color: var(--accent-green); font-weight: bold;"><i class="fas fa-arrow-trend-up mr-1"></i> Scale Budget (+30%)</span>';
+                countScale++;
+            } else if (c.status === 'Critical (Rugi)') {
+                actionHtml = '<span style="color: var(--accent-pink); font-weight: bold;"><i class="fas fa-pause mr-1"></i> Pertimbangkan Pause</span>';
+                countPause++;
+            } else if (c.status === 'Under-delivering') {
+                actionHtml = '<span style="color: var(--accent-yellow);"><i class="fas fa-cog mr-1"></i> Turunkan Bid ROAS</span>';
+            } else {
+                actionHtml = '<span style="color: var(--text-secondary);"><i class="fas fa-equals mr-1"></i> Pertahankan Budget</span>';
+            }
+
+            tableRows += `
+                <tr style="border-bottom: 1px solid var(--border-color);">
+                    <td style="padding: 12px 5px; font-weight: 500; color: #FFF; text-align: left;">${c.name}</td>
+                    <td style="padding: 12px 5px; text-align: right; font-weight: bold; color: ${c.roas >= c.beRoas ? 'var(--accent-green)' : 'var(--accent-pink)'}">${c.roas.toFixed(2)}x</td>
+                    <td style="padding: 12px 5px; text-align: right; color: var(--text-secondary);">${c.beRoas.toFixed(2)}x</td>
+                    <td style="padding: 12px 5px; text-align: right; font-weight: 500; color: var(--accent-cyan);">${allocPct.toFixed(1)}%</td>
+                    <td style="padding: 12px 5px; text-align: right; font-weight: 600; color: #FFF;">${formatRupiah(c.allocated)}</td>
+                    <td style="padding: 12px 5px; text-align: center;">${actionHtml}</td>
+                </tr>
+            `;
+        });
+
+        allocatorTableBody.innerHTML = tableRows;
+
+        if (allocatorSummaryText) {
+            if (countScale > 0 && countPause > 0) {
+                allocatorSummaryText.textContent = `Optimasi Selesai: Rekomendasi memindahkan anggaran dari ${countPause} kampanye rugi ke ${countScale} kampanye potensial (Scaling Zone) untuk memaksimalkan ROI toko Anda.`;
+            } else if (countScale > 0) {
+                allocatorSummaryText.textContent = `Optimasi Selesai: Tingkatkan budget pada ${countScale} kampanye Scaling Zone. Kampanye lainnya berjalan stabil.`;
+            } else if (countPause > 0) {
+                allocatorSummaryText.textContent = `Optimasi Selesai: Hemat budget Anda dengan mempause/mengurangi budget pada ${countPause} kampanye yang boncos (Critical).`;
+            } else {
+                allocatorSummaryText.textContent = "Optimasi Selesai: Alokasi anggaran merata. Semua kampanye berjalan dalam zona aman.";
+            }
+        }
+    }
+
     function drawSimulatorCurves(naturalRoas, plannedSpend, margin, cpc, cvr, aov) {
         const ctx = document.getElementById('chart-sim-curves').getContext('2d');
         
@@ -796,7 +941,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Simple CSV parser that respects quotes
+            // Auto-detect delimiter
+            let delimiter = ',';
+            if (lines.length > 0) {
+                const firstLine = lines[0];
+                const commaCount = (firstLine.match(/,/g) || []).length;
+                const semicolonCount = (firstLine.match(/;/g) || []).length;
+                const tabCount = (firstLine.match(/\t/g) || []).length;
+                
+                if (semicolonCount > commaCount && semicolonCount > tabCount) {
+                    delimiter = ';';
+                } else if (tabCount > commaCount && tabCount > semicolonCount) {
+                    delimiter = '\t';
+                }
+            }
+
+            // Simple CSV parser that respects quotes and auto-detected delimiter
             function parseCSVLine(line) {
                 const result = [];
                 let current = '';
@@ -805,7 +965,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const char = line[i];
                     if (char === '"') {
                         inQuotes = !inQuotes;
-                    } else if (char === ',' && !inQuotes) {
+                    } else if (char === delimiter && !inQuotes) {
                         result.push(current.trim());
                         current = '';
                     } else {
@@ -857,21 +1017,21 @@ document.addEventListener('DOMContentLoaded', () => {
             let targetIdx = -1;
 
             rawHeaders.forEach((h, idx) => {
-                const header = h.toLowerCase().replace(/[^a-z0-9\s]/g, '');
+                const header = h.toLowerCase().replace(/[^a-z0-9\s_]/g, '').trim();
                 
-                if (header.includes('name') || header.includes('kampanye') || header.includes('campaign') || header.includes('nama')) {
+                if (header.includes('name') || header.includes('kampanye') || header.includes('campaign') || header.includes('nama') || header.includes('nama_kampanye') || header.includes('campaign_name')) {
                     nameIdx = idx;
-                } else if (header.includes('spend') || header.includes('cost') || header.includes('biaya') || header.includes('jumlah yang dibelanjakan') || header.includes('anggaran yang digunakan') || header.includes('dibelanjakan') || header.includes('jumlah harian')) {
+                } else if (header.includes('spend') || header.includes('cost') || header.includes('biaya') || header.includes('jumlah yang dibelanjakan') || header.includes('anggaran yang digunakan') || header.includes('dibelanjakan') || header.includes('jumlah harian') || header.includes('amount_spent') || header.includes('total_cost')) {
                     spendIdx = idx;
-                } else if (header.includes('impress') || header.includes('tampil') || header.includes('penayangan') || header.includes('impression') || header.includes('tayangan') || header.includes('views')) {
+                } else if (header.includes('impress') || header.includes('tampil') || header.includes('penayangan') || header.includes('tayangan') || header.includes('views') || header.includes('impression') || header.includes('impressions') || header.includes('tayangan_iklan')) {
                     impIdx = idx;
-                } else if (header.includes('click') || header.includes('klik') || header.includes('jumlah klik')) {
+                } else if (header.includes('click') || header.includes('klik') || header.includes('clicks') || header.includes('jumlah_klik') || header.includes('klik_iklan')) {
                     clickIdx = idx;
-                } else if (header.includes('conv') || header.includes('order') || header.includes('purchase') || (header.includes('konversi') && !header.includes('nilai')) || header.includes('payment') || header.includes('penjualan unit') || header.includes('pembayaran lengkap') || header.includes('jumlah konversi') || header.includes('pesanan') || header.includes('hasil')) {
+                } else if (header.includes('conv') || header.includes('order') || header.includes('purchase') || (header.includes('konversi') && !header.includes('nilai')) || header.includes('payment') || header.includes('penjualan unit') || header.includes('pembayaran lengkap') || header.includes('jumlah konversi') || header.includes('pesanan') || header.includes('hasil') || header.includes('conversions') || header.includes('conversion') || header.includes('complete_payment') || header.includes('orders')) {
                     convIdx = idx;
-                } else if (header.includes('gmv') || header.includes('rev') || header.includes('value') || header.includes('nilai penjualan') || header.includes('nilai konversi') || header.includes('omset') || header.includes('omzet') || header.includes('revenue') || header.includes('pendapatan')) {
+                } else if (header.includes('gmv') || header.includes('rev') || header.includes('value') || header.includes('nilai penjualan') || header.includes('nilai konversi') || header.includes('omset') || header.includes('omzet') || header.includes('revenue') || header.includes('pendapatan') || header.includes('total_value') || header.includes('conversion_value') || header.includes('nilai_konversi')) {
                     gmvIdx = idx;
-                } else if (header.includes('target') || header.includes('roas target') || header.includes('target roas')) {
+                } else if (header.includes('target') || header.includes('roas target') || header.includes('target roas') || header.includes('target_roas')) {
                     targetIdx = idx;
                 }
             });
@@ -1035,6 +1195,7 @@ document.addEventListener('DOMContentLoaded', () => {
         generateRecommendations();
         updateNotifications();
         updateProductLeaderboard();
+        updatePortfolioAllocator();
     }
 
     function deleteCampaign(id) {
@@ -1468,7 +1629,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const diagCount = document.getElementById('diag-count');
 
     function generateRecommendations() {
+        const matrixContainer = document.getElementById('matrix-container');
         if (campaigns.length === 0) {
+            if (matrixContainer) matrixContainer.style.display = 'none';
             recListContainer.innerHTML = `
                 <div class="card text-center py-5 text-gray">
                     <i class="fas fa-lightbulb fa-3x mb-3 text-cyan"></i>
@@ -1484,6 +1647,57 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             diagCount.textContent = '0 Rekomendasi';
             return;
+        }
+
+        // Populate CTR vs CVR Matrix
+        const matrixHero = document.getElementById('matrix-hero-list');
+        const matrixCreativeWeak = document.getElementById('matrix-creative-weak-list');
+        const matrixShopWeak = document.getElementById('matrix-shop-weak-list');
+        const matrixUnoptimized = document.getElementById('matrix-unoptimized-list');
+
+        if (matrixContainer && matrixHero && matrixCreativeWeak && matrixShopWeak && matrixUnoptimized) {
+            matrixContainer.style.display = 'block';
+            matrixHero.innerHTML = '';
+            matrixCreativeWeak.innerHTML = '';
+            matrixShopWeak.innerHTML = '';
+            matrixUnoptimized.innerHTML = '';
+
+            let hasHero = false;
+            let hasCreativeWeak = false;
+            let hasShopWeak = false;
+            let hasUnoptimized = false;
+
+            campaigns.forEach(c => {
+                const ctr = c.impressions > 0 ? (c.clicks / c.impressions * 100) : 0;
+                const cvr = c.clicks > 0 ? (c.orders / c.clicks * 100) : 0;
+                const roas = c.spend > 0 ? c.gmv / c.spend : 0;
+
+                const li = document.createElement('li');
+                li.style.listStyle = 'none';
+                li.style.marginBottom = '8px';
+                li.style.borderBottom = '1px solid rgba(255, 255, 255, 0.03)';
+                li.style.paddingBottom = '6px';
+                li.innerHTML = `<span style="font-weight: 600; color: #FFF;">${c.name}</span><br><span class="text-secondary" style="font-size: 11px;">CTR: <strong>${ctr.toFixed(2)}%</strong> | CVR: <strong>${cvr.toFixed(2)}%</strong> | ROAS: <strong>${roas.toFixed(2)}x</strong></span>`;
+
+                if (ctr >= 1.0 && cvr >= 1.5) {
+                    matrixHero.appendChild(li);
+                    hasHero = true;
+                } else if (ctr < 1.0 && cvr >= 1.5) {
+                    matrixCreativeWeak.appendChild(li);
+                    hasCreativeWeak = true;
+                } else if (ctr >= 1.0 && cvr < 1.5) {
+                    matrixShopWeak.appendChild(li);
+                    hasShopWeak = true;
+                } else {
+                    matrixUnoptimized.appendChild(li);
+                    hasUnoptimized = true;
+                }
+            });
+
+            if (!hasHero) matrixHero.innerHTML = '<li style="list-style: none; color: var(--text-muted); font-style: italic; margin-left: 0;">Tidak ada kampanye aktif</li>';
+            if (!hasCreativeWeak) matrixCreativeWeak.innerHTML = '<li style="list-style: none; color: var(--text-muted); font-style: italic; margin-left: 0;">Tidak ada kampanye aktif</li>';
+            if (!hasShopWeak) matrixShopWeak.innerHTML = '<li style="list-style: none; color: var(--text-muted); font-style: italic; margin-left: 0;">Tidak ada kampanye aktif</li>';
+            if (!hasUnoptimized) matrixUnoptimized.innerHTML = '<li style="list-style: none; color: var(--text-muted); font-style: italic; margin-left: 0;">Tidak ada kampanye aktif</li>';
         }
 
         let criticalCount = 0;
@@ -2787,6 +3001,16 @@ document.addEventListener('DOMContentLoaded', () => {
     loadSimulatorInputsFromStorage();
     updateSimulator();
 
+    // Initialize Portfolio Allocator listeners
+    const allocatorTotalBudget = document.getElementById('allocator-total-budget');
+    const allocatorMinSpend = document.getElementById('allocator-min-spend');
+    if (allocatorTotalBudget) {
+        allocatorTotalBudget.addEventListener('input', updatePortfolioAllocator);
+    }
+    if (allocatorMinSpend) {
+        allocatorMinSpend.addEventListener('input', updatePortfolioAllocator);
+    }
+
     // ==========================================
     // SHOP PROFILE CUSTOMIZATION LOGIC
     // ==========================================
@@ -3142,6 +3366,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 charts.dailyTrend.destroy();
                 charts.dailyTrend = null;
             }
+            if (charts.dailyRoasCpa) {
+                charts.dailyRoasCpa.destroy();
+                charts.dailyRoasCpa = null;
+            }
 
             if (!Array.isArray(dailyLogs) || dailyLogs.length === 0) return;
 
@@ -3223,6 +3451,75 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             });
+
+            // Render Chart 2: Daily ROAS & CPA
+            const canvasRoasCpa = document.getElementById('chart-daily-roas-cpa');
+            if (canvasRoasCpa) {
+                const ctxRoasCpa = canvasRoasCpa.getContext('2d');
+                if (ctxRoasCpa) {
+                    const roasData = sortedLogs.map(log => log.spend > 0 ? log.gmv / log.spend : 0);
+                    const cpaData = sortedLogs.map(log => log.orders > 0 ? log.spend / log.orders : 0);
+
+                    charts.dailyRoasCpa = new Chart(ctxRoasCpa, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [
+                                {
+                                    label: 'ROAS Aktual',
+                                    data: roasData,
+                                    borderColor: '#B259FF', // Purple
+                                    backgroundColor: 'rgba(178, 89, 255, 0.05)',
+                                    borderWidth: 2.5,
+                                    pointRadius: 3.5,
+                                    tension: 0.2,
+                                    yAxisID: 'y'
+                                },
+                                {
+                                    label: 'CPA (Biaya per Order)',
+                                    data: cpaData,
+                                    borderColor: '#FFD214', // Yellow
+                                    backgroundColor: 'rgba(255, 210, 20, 0.05)',
+                                    borderWidth: 2,
+                                    pointRadius: 3,
+                                    tension: 0.2,
+                                    yAxisID: 'y1'
+                                }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { labels: { color: '#90A0B7', font: { family: 'Outfit', size: 11 } } }
+                            },
+                            scales: {
+                                x: { ticks: { color: '#90A0B7', font: { family: 'Outfit' } }, grid: { color: 'rgba(255, 255, 255, 0.03)' } },
+                                y: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'left',
+                                    title: { display: true, text: 'ROAS (x)', color: '#90A0B7', font: { family: 'Outfit', size: 10 } },
+                                    ticks: { color: '#90A0B7', font: { family: 'Outfit' }, callback: value => value.toFixed(1) + 'x' },
+                                    grid: { color: 'rgba(255, 255, 255, 0.03)' }
+                                },
+                                y1: {
+                                    type: 'linear',
+                                    display: true,
+                                    position: 'right',
+                                    title: { display: true, text: 'CPA (Rp)', color: '#90A0B7', font: { family: 'Outfit', size: 10 } },
+                                    ticks: {
+                                        color: '#90A0B7',
+                                        font: { family: 'Outfit' },
+                                        callback: value => 'Rp ' + (value >= 1e3 ? (value/1e3).toFixed(0) + 'rb' : value)
+                                    },
+                                    grid: { drawOnChartArea: false }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
         } catch (err) {
             console.error('Error rendering daily chart:', err);
             showToast('Gagal menampilkan grafik harian: ' + err.message, 'error');
